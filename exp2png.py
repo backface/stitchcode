@@ -73,7 +73,7 @@ if __name__ == '__main__':
 	emb.import_melco(infile)
 	if zoom != 1:
 		emb.scale(zoom)
-		emb.translate_to_origin()
+	emb.translate_to_origin()
 	emb.save_as_png(outfile)
 
 		
