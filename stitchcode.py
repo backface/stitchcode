@@ -226,17 +226,17 @@ class Embroidery:
 		for stitch in self.coords[1:]:
 			p = stitch.as_int()
 			draw.line(
-				(last.x + border, last.y + border, 
-				 p.x + border , p.y + border), 
+				(last.x + border, self.maxy - last.y + border, 
+				 p.x + border , self.maxy - p.y + border), 
 				fill=(0,0,0,0))
 			if(mark_stitch):
 				draw.line(
-					(p.x + border - stc, p.y + border - stc, 
-					 p.x + border + stc, p.y + border + stc), 
+					(p.x + border - stc, self.maxy - p.y + border - stc, 
+					 p.x + border + stc, self.maxy - p.y + border + stc), 
 					 fill=(0,0,0,0))
 				draw.line(
-					(p.x + border + stc, p.y + border - stc, 
-					 p.x + border - stc, p.y + border + stc), 
+					(p.x + border + stc, self.maxy - p.y + border - stc, 
+					 p.x + border - stc, self.maxy - p.y + border + stc), 
 					 fill=(0,0,0,0))
 			last = p		
 		img.save(filename, "PNG")	
