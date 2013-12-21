@@ -26,18 +26,20 @@ options:
     -i, --input=FILE        input EXP file
     -o, --output=FILE       output PNG file
     -z, --zoom=FACTOR       zoom in/out
+    -s, --show-stitches     show stitches    
 """
 
 infile = "";
 outfile = "";
 zoom = 1
+show_stitches = False
 
 def process_args():
-	global infile, outfile, zoom
+	global infile, outfile, zoom, show_stitches
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:",
-			["help", "input=","output=","zoom="])
+		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:s",
+			["help", "input=","output=","zoom=","show-stiches"])
 	except getopt.GetoptError, err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -54,6 +56,8 @@ def process_args():
 			infile = a
 		elif o in ("-z", "--zoom"):
 			zoom = float(a)
+		elif o in ("-s", "--show-stitch"):
+			show_stitches = True	
 		else:
 			assert False, "unhandled option"
 
@@ -71,9 +75,8 @@ if __name__ == '__main__':
 
 	emb = stitchcode.Embroidery()
 	emb.import_melco(infile)
-	if zoom != 1:
-		emb.scale(zoom)
+	emb.scale(zoom)
 	emb.translate_to_origin()
-	emb.save_as_png(outfile)
+	emb.save_as_png(outfile, show_stitches)
 
 		
