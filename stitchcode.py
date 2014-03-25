@@ -160,24 +160,65 @@ class Embroidery:
 			if stitch.jump:
 				self.str+=chr(0x80)
 				self.str+=chr(0x00)
-				
-			while (delta.x!=0 or delta.y!=0):
-				def clamp(v):
-					if (v>127):
-						v = 127
-					if (v<-127):
-						v = -127
-					return v			
-				dx = clamp(delta.x)
-				dy = clamp(delta.y)
-				move(dx,dy)
-				delta.x -= dx
-				delta.y -= dy
+			
+			#do several interpolated steps if too long			
+			dmax = max(abs(delta.x),abs(delta.y))
+			dsteps = abs(dmax / 127) + 1
+			#print dmax, dsteps, "(", delta.x,delta.y, ")"
+			for i in range(0,dsteps):
+				#print " ", i, ":", delta.x/dsteps, delta.y/dsteps
+				move(delta.x/dsteps, delta.y/dsteps)	
+			
+#			clamp values to max							
+#			while (delta.x!=0 or delta.y!=0):		
+
+#				def clamp(v):
+#					if (v>127):
+#						v = 127
+#					if (v<-127):
+#						v = -127
+#					return v	
+#				dx = clamp(delta.x)
+#				dy = clamp(delta.y)	
+#				move(dx,dy)
+#				delta.x -= dx
+#				delta.y -= dy
 				
 			#dbg.write("Stitch: %s delta %s\n" % (stitch, delta))
 			self.pos = stitch
 		return self.str
-		
+
+	def add_endstitches(self, length=20, maxstitch=127, dbg=sys.stderr):
+		self.str = ""
+		self.pos = self.coords[0]
+		new_coords = []
+		dbg.write("stitch count: %d\n" % len(self.coords))
+		new_coords.append(self.coords[0])
+		for stitch in self.coords[1:]:		
+			new_int = stitch.as_int()
+			old_int = self.pos.as_int()
+			delta = new_int - old_int		
+			dmax = max(abs(delta.x),abs(delta.y))
+			dmin = min(abs(delta.x),abs(delta.y))
+			if dmax <= 127:
+				new_coords.append(stitch)
+			else:
+				d = math.sqrt(pow(delta.x,2)+pow(delta.y,2))
+				x2 = length * delta.x / d
+				y2 = length * delta.y / d
+				print  delta.x,  delta.y, d, "-", x2,y2
+				
+				new_coords.append(Point(old_int.x+x2,old_int.y+y2))
+				new_coords.append(self.pos)
+				
+				new_coords.append(stitch)
+				
+				new_coords.append(Point(new_int.x-x2,new_int.y-y2))
+				new_coords.append(stitch)
+				
+			self.pos = stitch
+		self.coords = new_coords
+				
 	def write_exp(self, filename):
 		f = open(filename, "wb")
 		f.write(self.export_melco())		
@@ -188,7 +229,7 @@ class Embroidery:
 		(lastx, lasty) = (0,0)
 		(self.maxx, self.maxy) = (0,0)
 		(self.minx, self.miny) = (0,0)
-		
+		self.addStitch(Point(0, 0))
 		f = open(filename, "rb")
 		byte =" "
 		while byte:

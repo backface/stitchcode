@@ -21,7 +21,7 @@
 # Boston, MA 02111-1307, USA.
 
 import math
-from stitchcode import PyEmb
+import stitchcode
 import pyglet
 from pyglet.gl import *
 
@@ -42,7 +42,7 @@ class EmbScribbler(pyglet.window.Window):
 		glClearColor(1, 1, 1, 1)
 	
 	def clear_data(self):
-		self.emb = PyEmb.Embroidery()
+		self.emb = stitchcode.Embroidery()
 		self.points = []
 		self.last_point = 0	
 		
@@ -72,7 +72,7 @@ class EmbScribbler(pyglet.window.Window):
 		if self.isDistanceOK(x,y):
 			self.points.append((x,y))
 			self.last_point = (x,y)	
-			self.emb.addStitch(PyEmb.Point(x,y))		    
+			self.emb.addStitch(stitchcode.Point(x,y))		    
 			
 	def on_mouse_press(self, x, y, button, modifiers):
 		if button == pyglet.window.mouse.LEFT:
