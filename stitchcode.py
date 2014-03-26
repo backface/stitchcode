@@ -194,6 +194,7 @@ class Embroidery:
 		new_coords = []
 		dbg.write("stitch count: %d\n" % len(self.coords))
 		new_coords.append(self.coords[0])
+		first = False
 		for stitch in self.coords[1:]:		
 			new_int = stitch.as_int()
 			old_int = self.pos.as_int()
@@ -206,10 +207,12 @@ class Embroidery:
 				d = math.sqrt(pow(delta.x,2)+pow(delta.y,2))
 				x2 = length * delta.x / d
 				y2 = length * delta.y / d
-				print  delta.x,  delta.y, d, "-", x2,y2
+				#print  delta.x,  delta.y, d, "-", x2,y2
 				
+				#if not first:
 				new_coords.append(Point(old_int.x+x2,old_int.y+y2))
 				new_coords.append(self.pos)
+				#	first = False
 				
 				new_coords.append(stitch)
 				
@@ -229,12 +232,11 @@ class Embroidery:
 		(lastx, lasty) = (0,0)
 		(self.maxx, self.maxy) = (0,0)
 		(self.minx, self.miny) = (0,0)
-		self.addStitch(Point(0, 0))
 		f = open(filename, "rb")
 		byte =" "
 		while byte:
 			byte = f.read(1)
-			if byte != "":
+			if byte != "" and len(byte) > 0:
 				if byte == chr(0x80):
 					dbg.write("ignore jump stich or color change")
 					f.read(3)
@@ -243,12 +245,14 @@ class Embroidery:
 					if dx > 127:
 						dx = dx - 256
 					byte = f.read(1)
-					dy = ord(byte)
-					if dy > 127:
-						dy = dy - 256
-					lastx = lastx + dx
-					lasty = lasty + dy						
-					self.addStitch(Point(lastx, lasty))
+					if byte != "":
+						dy = ord(byte)
+						if dy > 127:
+							dy = dy - 256
+						lastx = lastx + dx
+						lasty = lasty + dy						
+						print dx,dy
+						self.addStitch(Point(lastx, lasty))
 		f.close()
 		dbg.write("loaded file: %s\n" % (filename))
 		self.translate_to_origin()
