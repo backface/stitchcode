@@ -49,8 +49,10 @@ class EmbScribbler(pyglet.window.Window):
 	def save(self):
 		if len(self.points) > 0:
 			self.emb.translate_to_origin()
-			self.emb.scale(10.0/pixels_per_millimeter)			
-			self.emb.add_endstitches()
+			self.emb.scale(10.0/pixels_per_millimeter)
+			#self.emb.flatten()	
+			#self.emb.to_triple_stitches()
+			#self.emb.add_endstitches()
 			fp = open(self.file_name, "wb")
 			fp.write(self.emb.export_melco())
 			fp.close()

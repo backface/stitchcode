@@ -100,8 +100,9 @@ class Embroidery:
 		for p in self.coords:
 			p.x *= sc
 			p.y *= sc
-			
-	def export_ksm(self, dbg):
+	
+	
+	def export_ksm(self, dbg): # unknow if it works:		
 		str = ""
 		self.pos = Point(0,0)
 		lastColor = None
@@ -131,96 +132,107 @@ class Embroidery:
 	def export_melco(self, dbg=sys.stderr):
 		self.str = ""
 		self.pos = self.coords[0]
-		dbg.write("stitch count: %d\n" % len(self.coords))
-		#lastColor = None
-		#numColors = 0x0
+		dbg.write("Export - stitch count: %d\n" % len(self.coords))
+		
 		for stitch in self.coords[1:]:
-			# ignore colors for the time being
-			#if (lastColor!=None and stitch.color!=lastColor):
-			#	numColors += 1
-			#	# color change
-			#	self.str += chr(0x80)
-			#	self.str += chr(0x01)
-			#	self.str += chr(numColors)
-			#	self.str += chr(((numColors+0x80)>>8)&0xff)
-			#	self.str += chr(((numColors+0x80)>>0)&0xff)
-			#lastColor = stitch.color
 			
 			new_int = stitch.as_int()
 			old_int = self.pos.as_int()
-			delta = new_int - old_int
-
+			delta = new_int - old_int	
 							
 			def move(x,y):
 				if (x<0): x = x + 256
 				self.str+=chr(x)
 				if (y<0): y = y + 256
 				self.str+=chr(y)
-
+			
+			# ignore colors for the time being	
+			# ignore jump stitches for the time being	
 			if stitch.jump:
 				self.str+=chr(0x80)
 				self.str+=chr(0x00)
-			
+				# do nothing for the time being
+				
 			#do several interpolated steps if too long			
 			dmax = max(abs(delta.x),abs(delta.y))
 			dsteps = abs(dmax / 127) + 1
-			#print dmax, dsteps, "(", delta.x,delta.y, ")"
 			for i in range(0,dsteps):
-				#print " ", i, ":", delta.x/dsteps, delta.y/dsteps
 				move(delta.x/dsteps, delta.y/dsteps)	
-			
-#			clamp values to max							
-#			while (delta.x!=0 or delta.y!=0):		
-
-#				def clamp(v):
-#					if (v>127):
-#						v = 127
-#					if (v<-127):
-#						v = -127
-#					return v	
-#				dx = clamp(delta.x)
-#				dy = clamp(delta.y)	
-#				move(dx,dy)
-#				delta.x -= dx
-#				delta.y -= dy
-				
-			#dbg.write("Stitch: %s delta %s\n" % (stitch, delta))
 			self.pos = stitch
+			
 		return self.str
 
-	def add_endstitches(self, length=20, maxstitch=127, dbg=sys.stderr):
-		self.str = ""
+	def add_endstitches(self, length=20, max_stitch_length=127, dbg=sys.stderr):
+		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
-		dbg.write("stitch count: %d\n" % len(self.coords))
 		new_coords.append(self.coords[0])
-		first = False
+		i = 1
 		for stitch in self.coords[1:]:		
 			new_int = stitch.as_int()
 			old_int = self.pos.as_int()
 			delta = new_int - old_int		
 			dmax = max(abs(delta.x),abs(delta.y))
-			dmin = min(abs(delta.x),abs(delta.y))
-			if dmax <= 127:
-				new_coords.append(stitch)
+			print dmax, delta.x, delta.y
+			if dmax <= max_stitch_length:
+				new_coords.append(stitch)				
 			else:
-				d = math.sqrt(pow(delta.x,2)+pow(delta.y,2))
-				x2 = length * delta.x / d
-				y2 = length * delta.y / d
-				#print  delta.x,  delta.y, d, "-", x2,y2
-				
-				#if not first:
+				x2 = length * delta.x / delta.length()
+				y2 = length * delta.y / delta.length()
 				new_coords.append(Point(old_int.x+x2,old_int.y+y2))
 				new_coords.append(self.pos)
-				#	first = False
-				
-				new_coords.append(stitch)
-				
+				new_coords.append(stitch)			
 				new_coords.append(Point(new_int.x-x2,new_int.y-y2))
-				new_coords.append(stitch)
-				
+				new_coords.append(stitch)		
+			self.pos = stitch
+			i = i +1
+		self.coords = new_coords
+		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))
+
+	def to_triple_stitches(self, length=5, dbg=sys.stderr):
+		dbg.write("to_triple_stitches BEGIN - stitch count: %d\n" % len(self.coords))
+		self.pos = self.coords[0]
+		new_coords = []
+		new_coords.append(self.coords[0])
+		for stitch in self.coords[1:]:		
+			new_stitch = stitch.as_int()
+			last_stitch = self.pos.as_int()
+			delta = new_stitch - last_stitch				
+			nx = length * -delta.y / delta.length()
+			ny = length * delta.x / delta.length()			
+			new_coords.append(stitch)
+			new_coords.append(Point(new_stitch.x + nx, new_stitch.y + ny))
+			new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
+			new_coords.append(Point(last_stitch.x + nx, last_stitch.y + ny))
+			new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
+			new_coords.append(stitch)				
 			self.pos = stitch
 		self.coords = new_coords
+		dbg.write("to_triple_stitches END - stitch count: %d\n" % len(self.coords))
+		
+	def flatten(self, max_length=127, dbg=sys.stderr):
+		dbg.write("flatten BEGIN - stitch count: %d\n" % len(self.coords))
+		self.pos = self.coords[0]
+		new_coords = []
+		new_coords.append(self.coords[0])
+		for stitch in self.coords[1:]:		
+			new_stitch = stitch.as_int()
+			last_stitch = self.pos.as_int()
+			delta = new_stitch - last_stitch	
+			#do several interpolated steps if too long			
+			dmax = max(abs(delta.x),abs(delta.y))
+			dsteps = abs(dmax / max_length) + 1
+			if dmax > 127:
+				for i in range(0, dsteps):					
+					x =  last_stitch.x + (i+1) * delta.x/dsteps					
+					y = last_stitch.y +  (i+1) * delta.y/dsteps
+					print dsteps, x, y
+					new_coords.append(Point(x,y))			
+			else:
+				new_coords.append(stitch)
+			self.pos = stitch
+		self.coords = new_coords
+		dbg.write("flatten END - stitch count: %d\n" % len(self.coords))
 				
 	def write_exp(self, filename):
 		f = open(filename, "wb")
@@ -287,8 +299,7 @@ class Embroidery:
 		img.save(filename, "PNG")	
 		dbg.write("saved image to file: %s\n" % (filename))
 		
-		
-		
+	# NOT YET READY:		
 	def export_svg_rel_melco(self, dbg=sys.stderr):
 		self.str = """<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
@@ -324,7 +335,8 @@ class Embroidery:
 		
 		self.str += "\" fill=\"none\" stroke=\"black\" stroke-width=\"2\"/></svg>"
 		return self.str		
-		
+
+	# NOT YET READY:			
 	def export_svg(self, dbg=sys.stderr):
 		self.str = """<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
@@ -344,11 +356,13 @@ class Embroidery:
 
 		self.str += "\" fill=\"none\" stroke=\"black\" stroke-width=\"2\"/></svg>"
 		return self.str		
-		
+
+	# NOT YET READY:			
 	def write_svg(self, filename):
 		fp = open(filename, "wb")
 		fp.write(self.export_svg())
 		fp.close()			
+		
 
 class Test:
 	def __init__(self):
