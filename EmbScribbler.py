@@ -37,8 +37,9 @@ class EmbScribbler(pyglet.window.Window):
 			height=height, 
 			resizable=False,
 			caption="EmbScribbler")
-		self.file_name = "scribble"
+		self.file_name = "scribble.exp"
 		self.clear_data()
+		self.jump = False
 		glClearColor(1, 1, 1, 1)
 	
 	def clear_data(self):
@@ -50,8 +51,9 @@ class EmbScribbler(pyglet.window.Window):
 		if len(self.points) > 0:
 			self.emb.translate_to_origin()
 			self.emb.scale(10.0/pixels_per_millimeter)
-			self.emb.flatten()	
-			#self.emb.to_triple_stitches()
+			#self.emb.flatten()	
+			self.emb.to_triple_stitches()
+			self.emb.add_endstitches_to_jump()
 			#self.emb.add_endstitches()
 			self.emb.save_as_exp(self.file_name)
 			print("saved as: %s" % self.file_name)
@@ -71,9 +73,10 @@ class EmbScribbler(pyglet.window.Window):
 		
 	def addPoint(self, x,y):
 		if self.isDistanceOK(x,y):
-			self.points.append((x,y))
-			self.last_point = (x,y)	
-			self.emb.addStitch(stitchcode.Point(x,y))		    
+			self.points.append((x,y,self.jump))
+			self.last_point = (x,y,self.jump)	
+			self.emb.addStitch(stitchcode.Point(x,y,self.jump))	
+			self.jump = False	    
 			
 	def on_mouse_press(self, x, y, button, modifiers):
 		if button == pyglet.window.mouse.LEFT:
@@ -88,15 +91,24 @@ class EmbScribbler(pyglet.window.Window):
 			self.clear_data()
 		elif symbol == pyglet.window.key.S:
 			self.save()
+		elif symbol == pyglet.window.key.J:
+			self.jump = True			
 		elif symbol == pyglet.window.key.ESCAPE:
 			exit() 	
 						
 	def on_draw(self):
 		self.clear()
+		glShadeModel(GL_FLAT)
 		glColor3f(0,0,0)			
 		glBegin(GL_LINE_STRIP)
 		for p in self.points:
-			glVertex2i(p[0], p[1])
+			if p[2]:
+				glColor3f(1,0,0)
+				glVertex2i(p[0], p[1])
+				glColor3f(0,0,0)
+			else:
+				glVertex2i(p[0], p[1])
+			
 		glEnd()
 		
 if __name__ == "__main__":
