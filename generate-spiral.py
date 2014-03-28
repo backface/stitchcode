@@ -36,5 +36,5 @@ if __name__ == "__main__":
 	turtle.speed(200)
 	f(.01, 89.5, .01, 150)
 	emb.translate_to_origin()
-	emb.write_exp("spiral.exp")
+	emb.save_as_exp("spiral.exp")
 	emb.save_as_png("spiral.png",True)

@@ -64,5 +64,5 @@ if __name__ == "__main__":
 	emb.addStitch(stitchcode.Point(x,0))
 	
 	emb.translate_to_origin()
-	emb.write_exp("noise.exp")
+	emb.save_as_exp("noise.exp")
 	emb.save_as_png("noise.png",False)
