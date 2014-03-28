@@ -37,7 +37,7 @@ class EmbScribbler(pyglet.window.Window):
 			height=height, 
 			resizable=False,
 			caption="EmbScribbler")
-		self.file_name = "scribble.exp"
+		self.file_name = "scribble"
 		self.clear_data()
 		glClearColor(1, 1, 1, 1)
 	
@@ -50,12 +50,10 @@ class EmbScribbler(pyglet.window.Window):
 		if len(self.points) > 0:
 			self.emb.translate_to_origin()
 			self.emb.scale(10.0/pixels_per_millimeter)
-			#self.emb.flatten()	
+			self.emb.flatten()	
 			#self.emb.to_triple_stitches()
 			#self.emb.add_endstitches()
-			fp = open(self.file_name, "wb")
-			fp.write(self.emb.export_melco())
-			fp.close()
+			self.emb.save_as_exp(self.file_name)
 			print("saved as: %s" % self.file_name)
 
 	def isDistanceOK(self,x,y):

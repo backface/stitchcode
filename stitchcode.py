@@ -100,67 +100,6 @@ class Embroidery:
 		for p in self.coords:
 			p.x *= sc
 			p.y *= sc
-	
-	
-	def export_ksm(self, dbg): # unknow if it works:		
-		str = ""
-		self.pos = Point(0,0)
-		lastColor = None
-		for stitch in self.coords:
-			if (lastColor!=None and stitch.color!=lastColor):
-				mode_byte = 0x99
-				#dbg.write("Color change!\n")
-			else:
-				mode_byte = 0x80
-				#dbg.write("color still %s\n" % stitch.color)
-			lastColor = stitch.color
-			new_int = stitch.as_int()
-			old_int = self.pos.as_int()
-			delta = new_int - old_int
-			assert(abs(delta.x)<=127)
-			assert(abs(delta.y)<=127)
-			str+=chr(abs(delta.y))
-			str+=chr(abs(delta.x))
-			if (delta.y<0):
-				mode_byte |= 0x20
-			if (delta.x<0):
-				mode_byte |= 0x40
-			str+=chr(mode_byte)
-			self.pos = stitch
-		return str
-
-	def export_melco(self, dbg=sys.stderr):
-		self.str = ""
-		self.pos = self.coords[0]
-		dbg.write("Export - stitch count: %d\n" % len(self.coords))
-		
-		for stitch in self.coords[1:]:
-			
-			new_int = stitch.as_int()
-			old_int = self.pos.as_int()
-			delta = new_int - old_int	
-							
-			def move(x,y):
-				if (x<0): x = x + 256
-				self.str+=chr(x)
-				if (y<0): y = y + 256
-				self.str+=chr(y)
-			
-			# ignore colors for the time being	
-			# ignore jump stitches for the time being	
-			if stitch.jump:
-				self.str+=chr(0x80)
-				self.str+=chr(0x00)
-				# do nothing for the time being
-				
-			#do several interpolated steps if too long			
-			dmax = max(abs(delta.x),abs(delta.y))
-			dsteps = abs(dmax / 127) + 1
-			for i in range(0,dsteps):
-				move(delta.x/dsteps, delta.y/dsteps)	
-			self.pos = stitch
-			
-		return self.str
 
 	def add_endstitches(self, length=20, max_stitch_length=127, dbg=sys.stderr):
 		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
@@ -226,19 +165,53 @@ class Embroidery:
 				for i in range(0, dsteps):					
 					x =  last_stitch.x + (i+1) * delta.x/dsteps					
 					y = last_stitch.y +  (i+1) * delta.y/dsteps
-					print dsteps, x, y
 					new_coords.append(Point(x,y))			
 			else:
 				new_coords.append(stitch)
 			self.pos = stitch
 		self.coords = new_coords
 		dbg.write("flatten END - stitch count: %d\n" % len(self.coords))
-				
-	def write_exp(self, filename):
+
+############################################
+#### FILE IMPORT AND EXPORT
+############################################
+
+	def save_as_exp(self, filename):
 		f = open(filename, "wb")
 		f.write(self.export_melco())		
 		f.close()
 		dbg.write("saved to file: %s\n" % (filename))
+		
+	def export_melco(self, dbg=sys.stderr):
+		self.str = ""
+		self.pos = self.coords[0]
+		dbg.write("Export - stitch count: %d\n" % len(self.coords))
+		
+		for stitch in self.coords[1:]:		
+			new_int = stitch.as_int()
+			old_int = self.pos.as_int()
+			delta = new_int - old_int	
+							
+			def move(x,y):
+				if (x<0): x = x + 256
+				self.str+=chr(x)
+				if (y<0): y = y + 256
+				self.str+=chr(y)
+			
+			# ignore colors for the time being	
+			# ignore jump stitches for the time being	
+			# if stitch.jump:
+			#	self.str+=chr(0x80)
+			#	self.str+=chr(0x00)
+				
+			#do several interpolated steps if too long			
+			dmax = max(abs(delta.x),abs(delta.y))
+			dsteps = abs(dmax / 127) + 1
+			for i in range(0,dsteps):
+				move(delta.x/dsteps, delta.y/dsteps)	
+			self.pos = stitch
+			
+		return self.str
 		
 	def import_melco(self, filename):
 		(lastx, lasty) = (0,0)
@@ -268,8 +241,6 @@ class Embroidery:
 		f.close()
 		dbg.write("loaded file: %s\n" % (filename))
 		self.translate_to_origin()
-
-
 		
 	def save_as_png(self, filename, mark_stitch=False):	
 		border=5
@@ -298,6 +269,46 @@ class Embroidery:
 			last = p		
 		img.save(filename, "PNG")	
 		dbg.write("saved image to file: %s\n" % (filename))
+
+
+############################################
+#### STUFF THAT IS NOT YET WORKING
+############################################
+
+	# KSM NOT WORKING!!!!
+	def write_ksm(self, filename):
+		f = open(filename, "wb")
+		f.write(self.export_ksm())		
+		f.close()
+		dbg.write("saved to file: %s\n" % (filename))
+			
+	def export_ksm(self, dbg=sys.stderr): 
+		str = ""
+		self.pos = Point(0,0)
+		lastColor = None
+		for stitch in self.coords:
+			if (lastColor!=None and stitch.color!=lastColor):
+				mode_byte = 0x99
+				#dbg.write("Color change!\n")
+			else:
+				mode_byte = 0x80
+				#dbg.write("color still %s\n" % stitch.color)
+			lastColor = stitch.color
+			new_int = stitch.as_int()
+			old_int = self.pos.as_int()
+			delta = new_int - old_int
+			assert(abs(delta.x)<=127)
+			assert(abs(delta.y)<=127)
+			str+=chr(abs(delta.y))
+			str+=chr(abs(delta.x))
+			if (delta.y<0):
+				mode_byte |= 0x20
+			if (delta.x<0):
+				mode_byte |= 0x40
+			str+=chr(mode_byte)
+			self.pos = stitch
+		return str
+		
 		
 	# NOT YET READY:		
 	def export_svg_rel_melco(self, dbg=sys.stderr):
@@ -362,7 +373,10 @@ class Embroidery:
 		fp = open(filename, "wb")
 		fp.write(self.export_svg())
 		fp.close()			
-		
+
+############################################
+#### Turtle and Test classes
+############################################		
 
 class Test:
 	def __init__(self):
@@ -381,5 +395,82 @@ class Test:
 		fp.write(emb.export_melco())
 		fp.close()
 
+class Turtle:
+	def __init__(self):
+		self.emb = Embroidery()
+		self.pos = Point(0.0,0.0)
+		self.dir = Point(1.0,0.0)
+		self.emb.addStitch(self.pos)
+
+	def forward(self, dist):
+		self.pos = self.pos+self.dir.mul(dist)
+		self.emb.addStitch(self.pos)
+
+	def turn(self, degreesccw):
+		radcw =  -degreesccw/180.0*3.141592653589
+		self.dir = Point(
+			math.cos(radcw)*self.dir.x-math.sin(radcw)*self.dir.y,
+			math.sin(radcw)*self.dir.x+math.cos(radcw)*self.dir.y)
+
+	def right(self, degreesccw):
+		self.turn(degreesccw)
+
+	def left(self, degreesccw):
+		self.turn(-degreesccw)
+	
+class Koch(Turtle):
+	def __init__(self, depth):
+		Turtle.__init__(self)
+
+		edgelen = 750.0
+		for i in range(3):
+			self.edge(depth, edgelen)
+			self.turn(120.0)
+
+		fp = open("koch%d.exp" % depth, "wb")
+		fp.write(self.emb.export_melco())
+		fp.close()
+	
+	def edge(self, depth, dist):
+		if (depth==0):
+			self.forward(dist)
+		else:
+			self.edge(depth-1, dist/3.0)
+			self.turn(-60.0)
+			self.edge(depth-1, dist/3.0)
+			self.turn(120.0)
+			self.edge(depth-1, dist/3.0)
+			self.turn(-60.0)
+			self.edge(depth-1, dist/3.0)
+
+class Hilbert(Turtle):
+	def __init__(self, level):
+		Turtle.__init__(self)
+
+		self.size = 10.0
+		self.hilbert(level, 90.0)
+
+		fp = open("hilbert%d.exp" % level, "wb")
+		fp.write(self.emb.export_melco())
+		fp.close()
+
+	# http://en.wikipedia.org/wiki/Hilbert_curve#Python
+	def hilbert(self, level, angle):
+		if (level==0):
+			return
+		self.right(angle)
+		self.hilbert(level-1, -angle)
+		self.forward(self.size)
+		self.left(angle)
+		self.hilbert(level-1, angle)
+		self.forward(self.size)
+		self.hilbert(level-1, angle)
+		self.left(angle)
+		self.forward(self.size)
+		self.hilbert(level-1, -angle)
+		self.right(angle)
+
 if (__name__=='__main__'):
 	Test()
+	Koch(4)
+	Hilbert(4)
