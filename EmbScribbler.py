@@ -51,9 +51,9 @@ class EmbScribbler(pyglet.window.Window):
 		if len(self.points) > 0:
 			self.emb.translate_to_origin()
 			self.emb.scale(10.0/pixels_per_millimeter)
-			#self.emb.flatten()	
-			self.emb.to_triple_stitches()
-			self.emb.add_endstitches_to_jump()
+			self.emb.flatten()	
+			#self.emb.to_triple_stitches()
+			self.emb.add_endstitches_to_jumps()
 			#self.emb.add_endstitches()
 			self.emb.save_as_exp(self.file_name)
 			print("saved as: %s" % self.file_name)

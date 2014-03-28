@@ -127,35 +127,38 @@ class Embroidery:
 		self.coords = new_coords
 		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))
 		
-	def add_endstitches_to_jump(self, length=10, dbg=sys.stderr):
+	def add_endstitches_to_jumps(self, length=10, dbg=sys.stderr):
 		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
 		new_coords.append(self.coords[0])
-		for j in range(1, len(self.coords)):
+
+		for j in range(0, len(self.coords)):
 			stitch = self.coords[j]		
 			if stitch.jump:
 				print "jump stitch"
 				# add stitch before
-				l1_int = self.coords[j-1].as_int()
-				l2_int = self.coords[j-2].as_int()
-				delta = l1_int - l2_int
-				dx = length * delta.x / delta.length()
-				dy = length * delta.y / delta.length()
-				
-				new_coords.append(Point(l1_int.x - dx, l1_int.y - dy))
-				new_coords.append(self.coords[j-1])
+				if j > 2:
+					l1_int = self.coords[j-1].as_int()
+					l2_int = self.coords[j-2].as_int()
+					delta = l1_int - l2_int
+					dx = length * delta.x / delta.length()
+					dy = length * delta.y / delta.length()
+					
+					new_coords.append(Point(l1_int.x - dx, l1_int.y - dy))
+					new_coords.append(self.coords[j-1])
 				
 				new_coords.append(stitch)
 				
 				#and after jump	
-				l3_int = self.coords[j].as_int()
-				l4_int = self.coords[j+1].as_int()
-				delta = l4_int - l3_int
-				dx = length * delta.x / delta.length()
-				dy = length * delta.y / delta.length()
-				new_coords.append(Point(l3_int.x + dx, l3_int.y + dy))
-				new_coords.append(Point(l3_int.x, l3_int.y))
+				if j+1 < len(self.coords):
+					l3_int = self.coords[j].as_int()
+					l4_int = self.coords[j+1].as_int()
+					delta = l4_int - l3_int
+					dx = length * delta.x / delta.length()
+					dy = length * delta.y / delta.length()
+					new_coords.append(Point(l3_int.x + dx, l3_int.y + dy))
+					new_coords.append(Point(l3_int.x, l3_int.y))
 			else:
 				new_coords.append(stitch)
 								
