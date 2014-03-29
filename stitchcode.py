@@ -106,7 +106,6 @@ class Embroidery:
 		self.pos = self.coords[0]
 		new_coords = []
 		new_coords.append(self.coords[0])
-		i = 1
 		for stitch in self.coords[1:]:		
 			new_int = stitch.as_int()
 			old_int = self.pos.as_int()
@@ -131,25 +130,20 @@ class Embroidery:
 		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
-		new_coords.append(self.coords[0])
+		new_coords.append(self.pos)
 
-		for j in range(0, len(self.coords)):
+		for j in range(1, len(self.coords)):
 			stitch = self.coords[j]		
-			if stitch.jump:
-				print "jump stitch"
-				# add stitch before
+			if stitch.jump == True:
 				if j > 2:
 					l1_int = self.coords[j-1].as_int()
 					l2_int = self.coords[j-2].as_int()
 					delta = l1_int - l2_int
 					dx = length * delta.x / delta.length()
-					dy = length * delta.y / delta.length()
-					
+					dy = length * delta.y / delta.length()					
 					new_coords.append(Point(l1_int.x - dx, l1_int.y - dy))
-					new_coords.append(self.coords[j-1])
-				
-				new_coords.append(stitch)
-				
+					new_coords.append(self.coords[j-1])			
+				new_coords.append(stitch)				
 				#and after jump	
 				if j+1 < len(self.coords):
 					l3_int = self.coords[j].as_int()
@@ -163,7 +157,6 @@ class Embroidery:
 				new_coords.append(stitch)
 								
 			self.pos = stitch
-		#self.coords = new_coords
 		self.coords = new_coords
 		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))		
 
@@ -336,40 +329,6 @@ class Embroidery:
 #### STUFF THAT IS NOT YET WORKING
 ############################################
 
-	# KSM NOT WORKING!!!!
-	def write_ksm(self, filename):
-		f = open(filename, "wb")
-		f.write(self.export_ksm())		
-		f.close()
-		dbg.write("saved to file: %s\n" % (filename))
-			
-	def export_ksm(self, dbg=sys.stderr): 
-		str = ""
-		self.pos = Point(0,0)
-		lastColor = None
-		for stitch in self.coords:
-			if (lastColor!=None and stitch.color!=lastColor):
-				mode_byte = 0x99
-				#dbg.write("Color change!\n")
-			else:
-				mode_byte = 0x80
-				#dbg.write("color still %s\n" % stitch.color)
-			lastColor = stitch.color
-			new_int = stitch.as_int()
-			old_int = self.pos.as_int()
-			delta = new_int - old_int
-			assert(abs(delta.x)<=127)
-			assert(abs(delta.y)<=127)
-			str+=chr(abs(delta.y))
-			str+=chr(abs(delta.x))
-			if (delta.y<0):
-				mode_byte |= 0x20
-			if (delta.x<0):
-				mode_byte |= 0x40
-			str+=chr(mode_byte)
-			self.pos = stitch
-		return str
-		
 		
 	# NOT YET READY:		
 	def export_svg_rel_melco(self, dbg=sys.stderr):
