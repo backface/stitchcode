@@ -33,6 +33,11 @@ def abs(x):
 	if (x<0): return -x
 	return x
 
+
+############################################
+#### POINT CLASS
+############################################
+
 class Point:
 	def __init__(self, x, y, jump=False, color=0):
 		self.x = x
@@ -63,6 +68,11 @@ class Point:
 
 	def __cmp__(self, other):
 		return cmp(self.as_tuple(), other.as_tuple())
+
+
+############################################
+#### MAIN EMBROIDERY CLASS
+############################################
 
 class Embroidery:
 	def __init__(self):
@@ -102,6 +112,8 @@ class Embroidery:
 			p.y *= sc
 
 	def add_endstitches(self, length=20, max_stitch_length=127, dbg=sys.stderr):
+		# adds endstitches before and after stitches that are too long
+		
 		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -125,8 +137,11 @@ class Embroidery:
 			self.pos = stitch
 		self.coords = new_coords
 		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))
-		
+	
+	
 	def add_endstitches_to_jumps(self, length=10, dbg=sys.stderr):
+		# adds endstitches before and after jump stitches.		
+		
 		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -161,6 +176,8 @@ class Embroidery:
 		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))		
 
 	def to_triple_stitches(self, length=5, dbg=sys.stderr):
+		# convert to triple stitches
+		
 		dbg.write("to_triple_stitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -183,6 +200,8 @@ class Embroidery:
 		dbg.write("to_triple_stitches END - stitch count: %d\n" % len(self.coords))
 		
 	def flatten(self, max_length=127, dbg=sys.stderr):
+		# flatten file - interpolate stitches that are too long
+		
 		dbg.write("flatten BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -205,17 +224,19 @@ class Embroidery:
 		self.coords = new_coords
 		dbg.write("flatten END - stitch count: %d\n" % len(self.coords))
 
-############################################
-#### FILE IMPORT AND EXPORT
-############################################
+	############################################
+	#### FILE IMPORT AND EXPORT
+	############################################
 
 	def save_as_exp(self, filename):
+		# save as EXP File
 		f = open(filename, "wb")
 		f.write(self.export_melco())		
 		f.close()
 		dbg.write("saved to file: %s\n" % (filename))
 		
 	def export_melco(self, dbg=sys.stderr):
+		# return stitches in EXP/Melco format
 		self.str = ""
 		self.pos = self.coords[0]
 		dbg.write("Export - stitch count: %d\n" % len(self.coords))
@@ -244,6 +265,7 @@ class Embroidery:
 		return self.str
 		
 	def import_melco(self, filename):
+		# read in an EXP/Melco file
 		(lastx, lasty) = (0,0)
 		(self.maxx, self.maxy) = (0,0)
 		(self.minx, self.miny) = (0,0)
@@ -277,6 +299,7 @@ class Embroidery:
 		self.translate_to_origin()
 		
 	def save_as_png(self, filename, mark_stitch=False):	
+		# Save as PNG image
 		border=5
 		stc = 2
 		stitch_color = (0,0,255,0)
@@ -325,9 +348,9 @@ class Embroidery:
 		dbg.write("saved image to file: %s\n" % (filename))
 
 
-############################################
-#### STUFF THAT IS NOT YET WORKING
-############################################
+	############################################
+	#### STUFF THAT IS NOT YET WORKING
+	############################################
 
 		
 	# NOT YET READY:		
