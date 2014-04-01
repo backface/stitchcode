@@ -280,7 +280,7 @@ class Embroidery:
 			for i in range(0,dsteps):
 				if stitch.jump:
 					self.str+=chr(0x80)
-					self.str+=chr(0x00)
+					self.str+=chr(0x04)
 				move(delta.x/dsteps, delta.y/dsteps)	
 			self.pos = stitch
 			
