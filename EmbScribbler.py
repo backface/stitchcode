@@ -55,6 +55,7 @@ class EmbScribbler(pyglet.window.Window):
 			#self.emb.to_triple_stitches()
 			#self.emb.add_endstitches_to_jumps()
 			#self.emb.add_endstitches()
+			#self.emb.to_red_work()
 			self.emb.save_as_exp(self.file_name)
 			print("saved as: %s" % self.file_name)
 

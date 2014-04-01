@@ -176,8 +176,7 @@ class Embroidery:
 		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))		
 
 	def to_triple_stitches(self, length=5, dbg=sys.stderr):
-		# convert to triple stitches
-		
+		# convert to triple stitches	
 		dbg.write("to_triple_stitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -194,6 +193,29 @@ class Embroidery:
 				new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
 				new_coords.append(Point(last_stitch.x + nx, last_stitch.y + ny))
 				new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
+			new_coords.append(stitch)				
+			self.pos = stitch
+		self.coords = new_coords
+		dbg.write("to_triple_stitches END - stitch count: %d\n" % len(self.coords))
+
+	def to_red_work(self, length=5, dbg=sys.stderr):
+		# convert to triple stitches	
+		dbg.write("to_triple_stitches BEGIN - stitch count: %d\n" % len(self.coords))
+		self.pos = self.coords[0]
+		new_coords = []
+		new_coords.append(self.coords[0])
+		for stitch in self.coords[1:]:		
+			if not stitch.jump:
+				new_stitch = stitch.as_int()
+				last_stitch = self.pos.as_int()
+				delta = new_stitch - last_stitch				
+				nx = length * -delta.y / delta.length()
+				ny = length * delta.x / delta.length()			
+				new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
+				new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
+				new_coords.append(Point(new_stitch.x + nx, new_stitch.y + ny))
+				new_coords.append(Point(last_stitch.x + nx, last_stitch.y + ny))
+				new_coords.append(stitch)
 			new_coords.append(stitch)				
 			self.pos = stitch
 		self.coords = new_coords

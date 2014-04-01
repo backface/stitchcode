@@ -26,6 +26,7 @@ options:
     -o, --output=FILE       output EXP file
     -z, --zoom=FACTOR       zoom in/out
     -t, --to-triples        convert to triple stitches
+    -r, --to-red-work      convert to triple stitches    
 """
 
 infile = "";
@@ -38,8 +39,8 @@ def process_args():
 	global to_triple_stitches
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:et",
-			["help", "input=","output=","zoom=","to-triples"])
+		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:tr",
+			["help", "input=","output=","zoom=","to-triples","to-red-work"])
 	except getopt.GetoptError, err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -58,6 +59,8 @@ def process_args():
 			zoom = float(a)
 		elif o in ("-t", "--to-triples"):
 			to_triple_stitches = True
+		elif o in ("-r", "--to-red_work"):
+			to_red_work = True
 		else:
 			usage();
 			sys.exit()
@@ -79,7 +82,11 @@ if __name__ == '__main__':
 	if to_triple_stitches:
 		print "convert to triple stitches"
 		emb.to_triple_stitches()	
-			
+		
+	if to_red_work:
+		print "convert to red work stitches"
+		emb.to_red_work()
+		
 	emb.save_as_exp(outfile)
 
 		
