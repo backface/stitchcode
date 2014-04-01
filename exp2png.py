@@ -59,10 +59,11 @@ def process_args():
 		elif o in ("-s", "--show-stitch"):
 			show_stitches = True	
 		else:
-			assert False, "unhandled option"
+			usage()
+			sys.exit()
 
 	if len(infile) == 0:
-		print "required."
+		print "options required."
 		usage()
 		sys.exit(2)
 		

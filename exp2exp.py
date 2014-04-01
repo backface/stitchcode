@@ -25,23 +25,21 @@ options:
     -i, --input=FILE        input EXP file
     -o, --output=FILE       output EXP file
     -z, --zoom=FACTOR       zoom in/out
-    -e, --add-endstitches   add end stitches
     -t, --to-triples        convert to triple stitches
 """
 
 infile = "";
 outfile = "";
 zoom = 1
-add_endstitches = False
 to_triple_stitches = False
 
 def process_args():
 	global infile, outfile, zoom
-	global add_endstitches, to_triple_stitches
+	global to_triple_stitches
 	
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:et",
-			["help", "input=","output=","zoom=","add-endstitches","to-triples"])
+			["help", "input=","output=","zoom=","to-triples"])
 	except getopt.GetoptError, err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -53,20 +51,19 @@ def process_args():
 			usage()
 			sys.exit()
 		elif o in ("-o", "--output"):
-			outfile = a
+			outfile = ab
 		elif o in ("-i", "--input"):
 			infile = a
 		elif o in ("-z", "--zoom"):
 			zoom = float(a)
-		elif o in ("-e", "--add-endstitches"):
-			add_endstitches = True	
 		elif o in ("-t", "--to-triples"):
 			to_triple_stitches = True
 		else:
-			assert False, "unhandled option"
+			usage();
+			sys.exit()
 
 	if len(infile) == 0:
-		print "required."
+		print "options required."
 		usage()
 		sys.exit(2)	
 
@@ -78,13 +75,11 @@ if __name__ == '__main__':
 	emb = stitchcode.Embroidery()
 	emb.import_melco(infile)
 	emb.scale(zoom)
-	#emb.translate_to_origin()
-	if add_endstitches:
-		print "adding end stitches"
-		emb.add_endstitches_to_jumps()
+
 	if to_triple_stitches:
 		print "convert to triple stitches"
-		emb.to_triple_stitches()		
+		emb.to_triple_stitches()	
+			
 	emb.save_as_exp(outfile)
 
 		
