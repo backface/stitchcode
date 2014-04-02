@@ -26,7 +26,7 @@ options:
     -o, --output=FILE       output EXP file
     -z, --zoom=FACTOR       zoom in/out
     -t, --to-triples        convert to triple stitches
-    -r, --to-red-work      convert to triple stitches    
+    -r, --to-red-work       convert to red work stitches 
 """
 
 infile = "";
