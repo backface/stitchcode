@@ -27,20 +27,26 @@ options:
     -z, --zoom=FACTOR       zoom in/out
     -t, --to-triples        convert to triple stitches
     -r, --to-red-work       convert to red work stitches 
+    -d, --distance=VALUES   distance of triple/redwork stitches in mm
 """
 
 infile = "";
 outfile = "";
 zoom = 1
+distance = 3
 to_triple_stitches = False
+to_red_work = False
 
 def process_args():
 	global infile, outfile, zoom
 	global to_triple_stitches
+	global to_red_work
+	global distance
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:tr",
-			["help", "input=","output=","zoom=","to-triples","to-red-work"])
+		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:trd:",
+			["help", "input=","output=","zoom=","to-triples","to-red-work",
+			"distance"])
 	except getopt.GetoptError, err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -52,7 +58,7 @@ def process_args():
 			usage()
 			sys.exit()
 		elif o in ("-o", "--output"):
-			outfile = ab
+			outfile = a
 		elif o in ("-i", "--input"):
 			infile = a
 		elif o in ("-z", "--zoom"):
@@ -61,6 +67,8 @@ def process_args():
 			to_triple_stitches = True
 		elif o in ("-r", "--to-red_work"):
 			to_red_work = True
+		elif o in ("-d", "--distance"):
+			distance = float(a)			
 		else:
 			usage();
 			sys.exit()
@@ -81,11 +89,11 @@ if __name__ == '__main__':
 
 	if to_triple_stitches:
 		print "convert to triple stitches"
-		emb.to_triple_stitches()	
+		emb.to_triple_stitches(distance*10)	
 		
 	if to_red_work:
 		print "convert to red work stitches"
-		emb.to_red_work()
+		emb.to_red_work(distance*10)
 		
 	emb.save_as_exp(outfile)
 
