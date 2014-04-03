@@ -107,6 +107,7 @@ class Embroidery:
 		dbg.write("translated to origin. resulting field size: %0.2fmm x %0.2fmm\n" % (sx/10,sy/10))
 
 	def scale(self, sc):
+		dbg.write("scale to %d%%\n" % (sc * 100))
 		for p in self.coords:
 			p.x *= sc
 			p.y *= sc
@@ -175,7 +176,7 @@ class Embroidery:
 		self.coords = new_coords
 		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))		
 
-	def to_triple_stitches(self, length=3, dbg=sys.stderr):
+	def to_triple_stitches(self, length=2, dbg=sys.stderr):
 		# convert to triple stitches	
 		dbg.write("to_triple_stitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
@@ -316,7 +317,6 @@ class Embroidery:
 						dy = dy - 256
 					lastx = lastx + dx
 					lasty = lasty + dy						
-					print dx,dy
 					self.addStitch(Point(lastx, lasty,jump))
 					jump = False
 		f.close()
