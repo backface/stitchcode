@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
 	emb = stitchcode.Embroidery()
 	emb.import_melco(infile)
-	emb.scale(zoom*0.33)
+	emb.scale(zoom)
 	emb.translate_to_origin()
 	emb.save_as_png(outfile, show_stitches)
 

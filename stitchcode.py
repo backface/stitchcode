@@ -111,7 +111,7 @@ class Embroidery:
 			p.x *= sc
 			p.y *= sc
 
-	def add_endstitches(self, length=20, max_stitch_length=127, dbg=sys.stderr):
+	def add_endstitches(self, length=10, max_stitch_length=127, dbg=sys.stderr):
 		# adds endstitches before and after stitches that are too long
 		
 		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
@@ -175,7 +175,7 @@ class Embroidery:
 		self.coords = new_coords
 		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))		
 
-	def to_triple_stitches(self, length=5, dbg=sys.stderr):
+	def to_triple_stitches(self, length=3, dbg=sys.stderr):
 		# convert to triple stitches	
 		dbg.write("to_triple_stitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
@@ -188,17 +188,20 @@ class Embroidery:
 				delta = new_stitch - last_stitch				
 				nx = length * -delta.y / delta.length()
 				ny = length * delta.x / delta.length()			
-				new_coords.append(stitch)
-				new_coords.append(Point(new_stitch.x + nx, new_stitch.y + ny))
-				new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
-				new_coords.append(Point(last_stitch.x + nx, last_stitch.y + ny))
+				#new_coords.append(stitch)
+				#new_coords.append(Point(new_stitch.x + nx, new_stitch.y + ny))
+				#new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
+				#new_coords.append(Point(last_stitch.x + nx, last_stitch.y + ny))
+				#new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
 				new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
+				new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
+				new_coords.append(stitch)
 			new_coords.append(stitch)				
 			self.pos = stitch
 		self.coords = new_coords
 		dbg.write("to_triple_stitches END - stitch count: %d\n" % len(self.coords))
 
-	def to_red_work(self, length=5, dbg=sys.stderr):
+	def to_red_work(self, length=3, dbg=sys.stderr):
 		# convert to triple stitches	
 		dbg.write("to_triple_stitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
