@@ -33,7 +33,7 @@ options:
 infile = "";
 outfile = "";
 zoom = 1
-distance = 3
+distance = 0.3
 to_triple_stitches = False
 to_red_work = False
 
