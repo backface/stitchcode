@@ -186,7 +186,8 @@ class Embroidery:
 			if not stitch.jump:
 				new_stitch = stitch.as_int()
 				last_stitch = self.pos.as_int()
-				delta = new_stitch - last_stitch				
+				delta = new_stitch - last_stitch	
+				#print new_stitch, last_stitch, delta			
 				nx = length * -delta.y / delta.length()
 				ny = length * delta.x / delta.length()			
 				#new_coords.append(stitch)
@@ -302,10 +303,12 @@ class Embroidery:
 			byte = f.read(1)
 			if byte != "" and len(byte) > 0:
 				if byte == chr(0x80):
-					dbg.write("ignore jump stich or color change")
-					f.read(1)
 					byte = f.read(1)
-					jump = True
+					if byte == chr(0x04) or byte == chr(0x02):					
+						jump = True
+					elif byte == chr(0x01) or byte == chr(0x02):
+						dbg.write("ignoring color change")
+					byte = f.read(1)
 					
 				dx = ord(byte)
 				if dx > 127:
@@ -316,8 +319,9 @@ class Embroidery:
 					if dy > 127:
 						dy = dy - 256
 					lastx = lastx + dx
-					lasty = lasty + dy						
-					self.addStitch(Point(lastx, lasty,jump))
+					lasty = lasty + dy		
+					if dx != 0 and dy != 0:
+						self.addStitch(Point(lastx, lasty, jump))
 					jump = False
 		f.close()
 		dbg.write("loaded file: %s\n" % (filename))
