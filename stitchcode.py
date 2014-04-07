@@ -155,20 +155,22 @@ class Embroidery:
 					l1_int = self.coords[j-1].as_int()
 					l2_int = self.coords[j-2].as_int()
 					delta = l1_int - l2_int
-					dx = length * delta.x / delta.length()
-					dy = length * delta.y / delta.length()					
-					new_coords.append(Point(l1_int.x - dx, l1_int.y - dy))
-					new_coords.append(self.coords[j-1])			
+					if delta.length != 0:				
+						dx = length * delta.x / delta.length()
+						dy = length * delta.y / delta.length()					
+						new_coords.append(Point(l1_int.x - dx, l1_int.y - dy))
+						new_coords.append(self.coords[j-1])			
 				new_coords.append(stitch)				
 				#and after jump	
 				if j+1 < len(self.coords):
 					l3_int = self.coords[j].as_int()
 					l4_int = self.coords[j+1].as_int()
 					delta = l4_int - l3_int
-					dx = length * delta.x / delta.length()
-					dy = length * delta.y / delta.length()
-					new_coords.append(Point(l3_int.x + dx, l3_int.y + dy))
-					new_coords.append(Point(l3_int.x, l3_int.y))
+					if delta.length != 0:				
+						dx = length * delta.x / delta.length()
+						dy = length * delta.y / delta.length()
+						new_coords.append(Point(l3_int.x + dx, l3_int.y + dy))
+						new_coords.append(Point(l3_int.x, l3_int.y))
 			else:
 				new_coords.append(stitch)
 								
@@ -187,17 +189,12 @@ class Embroidery:
 				new_stitch = stitch.as_int()
 				last_stitch = self.pos.as_int()
 				delta = new_stitch - last_stitch	
-				#print new_stitch, last_stitch, delta			
-				nx = length * -delta.y / delta.length()
-				ny = length * delta.x / delta.length()			
-				#new_coords.append(stitch)
-				#new_coords.append(Point(new_stitch.x + nx, new_stitch.y + ny))
-				#new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
-				#new_coords.append(Point(last_stitch.x + nx, last_stitch.y + ny))
-				#new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
-				new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
-				new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
-				new_coords.append(stitch)
+				if delta.length != 0:						
+					nx = length * -delta.y / delta.length()
+					ny = length * delta.x / delta.length()			
+					new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
+					new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
+					new_coords.append(stitch)
 			new_coords.append(stitch)				
 			self.pos = stitch
 		self.coords = new_coords
@@ -213,14 +210,15 @@ class Embroidery:
 			if not stitch.jump:
 				new_stitch = stitch.as_int()
 				last_stitch = self.pos.as_int()
-				delta = new_stitch - last_stitch				
-				nx = length * -delta.y / delta.length()
-				ny = length * delta.x / delta.length()			
-				new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
-				new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
-				new_coords.append(Point(new_stitch.x + nx, new_stitch.y + ny))
-				new_coords.append(Point(last_stitch.x + nx, last_stitch.y + ny))
-				new_coords.append(stitch)
+				delta = new_stitch - last_stitch
+				if delta.length != 0:				
+					nx = length * -delta.y / delta.length()
+					ny = length * delta.x / delta.length()			
+					new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
+					new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
+					new_coords.append(Point(new_stitch.x + nx, new_stitch.y + ny))
+					new_coords.append(Point(last_stitch.x + nx, last_stitch.y + ny))
+					new_coords.append(stitch)
 			new_coords.append(stitch)				
 			self.pos = stitch
 		self.coords = new_coords
@@ -236,18 +234,19 @@ class Embroidery:
 		for stitch in self.coords[1:]:		
 			new_stitch = stitch.as_int()
 			last_stitch = self.pos.as_int()
-			delta = new_stitch - last_stitch	
-			#do several interpolated steps if too long			
-			dmax = max(abs(delta.x),abs(delta.y))
-			dsteps = abs(dmax / max_length) + 1
-			if dmax > max_length and not stitch.jump:
-				for i in range(0, dsteps):					
-					x =  last_stitch.x + (i+1) * delta.x/dsteps					
-					y = last_stitch.y +  (i+1) * delta.y/dsteps
-					new_coords.append(Point(x,y))			
-			else:
-				new_coords.append(stitch)
-			self.pos = stitch
+			delta = new_stitch - last_stitch
+			if delta.length:	
+				#do several interpolated steps if too long			
+				dmax = max(abs(delta.x),abs(delta.y))
+				dsteps = abs(dmax / max_length) + 1
+				if dmax > max_length and not stitch.jump:
+					for i in range(0, dsteps):					
+						x =  last_stitch.x + (i+1) * delta.x/dsteps					
+						y = last_stitch.y +  (i+1) * delta.y/dsteps
+						new_coords.append(Point(x,y))			
+				else:
+					new_coords.append(stitch)
+				self.pos = stitch
 		self.coords = new_coords
 		dbg.write("flatten END - stitch count: %d\n" % len(self.coords))
 
