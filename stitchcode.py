@@ -332,12 +332,22 @@ class Embroidery:
 		stc = 2
 		stitch_color = (0,0,255,0)
 		line_color = (0,0,0,0)
+
+		(self.maxx, self.maxy) = (0,0)
+		(self.minx, self.miny) = (0,0)
+		for p in self.coords:
+			self.minx = min(self.minx,p.x)
+			self.miny = min(self.miny,p.y)
+			self.maxx = max(self.maxx,p.x)
+			self.maxy = max(self.maxy,p.y)
+					
 		sx = int( self.maxx - self.minx + 2*border )
 		sy = int( self.maxy - self.miny + 2*border )
+		
 		img = Image.new("RGB", (sx,sy), (255,255,255))
 		draw  =  ImageDraw.Draw(img)	
 		last = self.coords[0]
-		
+				
 		def mark_point(point):
 			draw.line(
 				(point.x + border - stc, self.maxy - point.y + border - stc, 
@@ -352,6 +362,7 @@ class Embroidery:
 			mark_point(last)
 					 		
 		for stitch in self.coords[1:]:
+
 			if stitch.jump:
 				line_color = (255,0,0,0)
 				stitch_color = (0,0,255,0)
@@ -364,14 +375,14 @@ class Embroidery:
 				(last.x + border, self.maxy - last.y + border, 
 				 p.x + border , self.maxy - p.y + border), 
 				fill=line_color)
-				
+			
 			if(mark_stitch and not stitch.jump):
 				mark_point(p)
 					 
 			if(mark_stitch and not stitch.jump and last.jump):
 				mark_point(last)
 								
-			last = stitch		
+			last = p		
 		img.save(filename, "PNG")	
 		dbg.write("saved image to file: %s\n" % (filename))
 
