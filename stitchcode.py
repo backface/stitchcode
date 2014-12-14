@@ -90,8 +90,8 @@ class Embroidery:
 		self.coords.append(coord)
 
 	def translate_to_origin(self):
-		(self.minx,self.maxx) = (0,0)
-		(self.miny,self.maxy) = (0,0)
+		(self.minx,self.maxx) = (9999999,0)
+		(self.miny,self.maxy) = (9999999,0)
 		if (len(self.coords)==0):
 			return
 		for p in self.coords:
@@ -103,7 +103,7 @@ class Embroidery:
 		sy = self.maxy-self.miny
 		for p in self.coords:
 			p.x -= self.minx
-			p.y -= self.miny		
+			p.y -= self.miny
 		dbg.write("translated to origin. resulting field size: %0.2fmm x %0.2fmm\n" % (sx/10,sy/10))
 
 	def scale(self, sc):
@@ -340,10 +340,10 @@ class Embroidery:
 			self.miny = min(self.miny,p.y)
 			self.maxx = max(self.maxx,p.x)
 			self.maxy = max(self.maxy,p.y)
-					
+
 		sx = int( self.maxx - self.minx + 2*border )
 		sy = int( self.maxy - self.miny + 2*border )
-		
+
 		img = Image.new("RGB", (sx,sy), (255,255,255))
 		draw  =  ImageDraw.Draw(img)	
 		last = self.coords[0]
