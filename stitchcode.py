@@ -155,7 +155,7 @@ class Embroidery:
 					l1_int = self.coords[j-1].as_int()
 					l2_int = self.coords[j-2].as_int()
 					delta = l1_int - l2_int
-					if delta.length != 0:				
+					if delta.length() != 0:				
 						dx = length * delta.x / delta.length()
 						dy = length * delta.y / delta.length()					
 						new_coords.append(Point(l1_int.x - dx, l1_int.y - dy))
@@ -166,7 +166,7 @@ class Embroidery:
 					l3_int = self.coords[j].as_int()
 					l4_int = self.coords[j+1].as_int()
 					delta = l4_int - l3_int
-					if delta.length != 0:				
+					if delta.length() != 0:				
 						dx = length * delta.x / delta.length()
 						dy = length * delta.y / delta.length()
 						new_coords.append(Point(l3_int.x + dx, l3_int.y + dy))
