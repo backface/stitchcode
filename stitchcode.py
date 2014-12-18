@@ -334,7 +334,7 @@ class Embroidery:
 		line_color = (0,0,0,0)
 
 		(self.maxx, self.maxy) = (0,0)
-		(self.minx, self.miny) = (0,0)
+		(self.minx, self.miny) = (9999999,9999999)
 		for p in self.coords:
 			self.minx = min(self.minx,p.x)
 			self.miny = min(self.miny,p.y)
@@ -385,76 +385,41 @@ class Embroidery:
 			last = p		
 		img.save(filename, "PNG")	
 		dbg.write("saved image to file: %s\n" % (filename))
-
-
-	############################################
-	#### STUFF THAT IS NOT YET WORKING
-	############################################
-
-		
-	# NOT YET READY:		
-	def export_svg_rel_melco(self, dbg=sys.stderr):
-		self.str = """<?xml version="1.0" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
-  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="4cm" height="4cm" viewBox="0 0 400 400"
-     xmlns="http://www.w3.org/2000/svg" version="1.1">
-  <title>Embroidery export</title>
-  <rect x="1" y="1" width="398" height="398"
-        fill="none" stroke="blue" />
-  <path d=\""""
-		self.pos = self.coords[0]
-		self.str += "M %d %d" % (self.coords[0].x, - self.coords[0].y)
-		dbg.write("stitch count: %d\n" % len(self.coords))
-		for stitch in self.coords[1:]:
-			new_int = stitch.as_int()
-			old_int = self.pos.as_int()
-			delta = new_int - old_int
+	
 				
-			while (delta.x!=0 or delta.y!=0):
-				def clamp(v):
-					if (v>127):
-						v = 127
-					if (v<-127):
-						v = -127
-					return v
-				dx = clamp(delta.x)
-				dy = clamp(delta.y)
-				self.str += " l %d %d" % (dx, -dy)
-				delta.x -= dx
-				delta.y -= dy
-				
-			self.pos = stitch
-		
-		self.str += "\" fill=\"none\" stroke=\"black\" stroke-width=\"2\"/></svg>"
-		return self.str		
-
-	# NOT YET READY:			
 	def export_svg(self, dbg=sys.stderr):
+		(self.maxx, self.maxy) = (0,0)
+		(self.minx, self.miny) = (9999999,9999999)
+		for p in self.coords:
+			self.minx = min(self.minx,p.x)
+			self.miny = min(self.miny,p.y)
+			self.maxx = max(self.maxx,p.x)
+			self.maxy = max(self.maxy,p.y)
+
+		sx = int( self.maxx - self.minx)
+		sy = int( self.maxy - self.miny)
+				
 		self.str = """<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="4cm" height="4cm" viewBox="0 -400 400 0"
+<svg width="%d" height="%d" viewBox="0 -%d %d 0"
      xmlns="http://www.w3.org/2000/svg" version="1.1">
   <title>Embroidery export</title>
-  <rect x="1" y="1" width="398" height="398"
-        fill="none" stroke="blue" />
-  <path d=\""""
-
+  <path d=\"""" % (sx,sy,sx,sy)
 		self.pos = self.coords[0]
-		#self.str += "M 0 0"
-		self.str += "M %d %d" % (self.coords[0].x, - self.coords[0].y)
+		self.str += "M %d %d" % (self.coords[0].x, self.coords[0].y )
+		self.str += "M 0 0"
 		for stitch in self.coords[1:]:
-			self.str += " L %d %d" % (stitch.x, - stitch.y)
-
+			self.str += " L %d %d" % (stitch.x,  stitch.y)
 		self.str += "\" fill=\"none\" stroke=\"black\" stroke-width=\"2\"/></svg>"
 		return self.str		
 
 	# NOT YET READY:			
-	def write_svg(self, filename):
+	def save_as_svg(self, filename):
 		fp = open(filename, "wb")
 		fp.write(self.export_svg())
 		fp.close()			
+
 
 ############################################
 #### Turtle and Test classes
