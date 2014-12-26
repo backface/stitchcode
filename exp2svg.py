@@ -19,12 +19,12 @@ def usage():
 	print """
 usage: exp2svg.py [options] -i EXP-FILE -o SVG-FILE
 
-renders an EXP embroidery file as a PNG image
+renders an EXP embroidery file as SVG-image
 
 options:
     -h, --help              print usage
     -i, --input=FILE        input EXP file
-    -o, --output=FILE       output PNG file
+    -o, --output=FILE       output SVG file
     -z, --zoom=FACTOR       zoom in/out
     -s, --show-stitches     show stitches    
 """

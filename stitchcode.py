@@ -408,10 +408,9 @@ class Embroidery:
   <path d=\"""" % (sx,sy,sx,sy)
 		self.pos = self.coords[0]
 		self.str += "M %d %d" % (self.coords[0].x, self.coords[0].y )
-		self.str += "M 0 0"
 		for stitch in self.coords[1:]:
-			self.str += " L %d %d" % (stitch.x,  stitch.y)
-		self.str += "\" fill=\"none\" stroke=\"black\" stroke-width=\"2\"/></svg>"
+			self.str += " L %d %d" % (stitch.x,  sy-stitch.y)
+		self.str += "\" fill=\"none\" stroke=\"black\" stroke-width=\"1\"/></svg>"
 		return self.str		
 
 	# NOT YET READY:			
