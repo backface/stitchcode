@@ -26,6 +26,7 @@
 
 import math
 import sys
+from struct import unpack
 from PIL import Image,ImageDraw
 dbg = sys.stderr
 
@@ -325,7 +326,100 @@ class Embroidery:
 		f.close()
 		dbg.write("loaded file: %s\n" % (filename))
 		self.translate_to_origin()
+	
+	def import_pes(self, filename):
+		# read in an PES Brother file
 		
+		def readInt32(file):
+			data = unpack('<I', file.read(4))[0]
+			return data
+
+		def readInt16(file):
+			data = int(unpack('H', file.read(2))[0])
+			return data	
+					
+		def readInt8(file):
+			data = int(unpack('B', file.read(1))[0])
+			return data		
+					
+		(lastx, lasty) = (0,0)
+		(self.maxx, self.maxy) = (0,0)
+		(self.minx, self.miny) = (0,0)
+		jump = False
+		f = open(filename, "rb")
+
+		# derived from stitchloader.py
+		sig = f.read(4)
+		if not sig == "#PES":
+			dbg.write("not an exp file");
+			exit()
+		dbg.write("found PES header - version ")
+		version = f.read(4)
+		dbg.write(version)
+		dbg.write("\n")
+		
+		pecstart = readInt32(f)
+		
+		f.seek(77)
+		width =  readInt16(f)
+		height =  readInt16(f)
+		dbg.write("dimension %d x %d mm\n" %(width/10.0,height/10.0))
+		
+		#No. of colors in file
+		f.seek(pecstart + 48)
+		numColors = readInt8(f) + 1
+		dbg.write("%d colors - but ignoring colors for now\n" % numColors)
+
+		# derived from stitchloader.py
+		# Beginning of stitch data
+		f.seek(pecstart + 532)
+		while 1:
+			val1 = readInt8(f)
+			val2 = readInt8(f)
+			
+			if val1 is None or val2 is None:
+				break
+			elif val1 == 255 and val2 == 0:
+				break
+			elif val1 == 254 and val2 == 176:
+				nn = readInt8(f)
+				dbg.write("ignoring color change\n")
+			else:
+				if val1 & 128 == 128: # 0x80
+					#this is a jump stitch
+					jump = True
+					x = ((val1 & 15) * 256) + val2
+					if x & 2048 == 2048: # 0x0800
+						x= x - 4096
+					#read next byte for Y value
+					val2 = readInt8(f)
+				else:
+					#normal stitch
+					jump = False
+					x = val1
+					if x > 63:
+						x = x - 128
+				
+				if val2 & 128 == 128: # 0x80
+					#this is a jump stitch
+					jump = True
+					val3 = readInt8(f)
+					y = ((val2 & 15) * 256) + val3
+					if y & 2048 == 2048: # 0x0800
+						y = y - 4096
+				else:
+					#normal stitch
+					jump = False
+					y = val2
+					if y > 63:
+						y = y - 128
+				#flip vertical coordinate 
+				x, y = x, -y
+
+				lastx = lastx + x
+				lasty = lasty + y	
+				self.addStitch(Point(lastx, lasty, jump))
+			
 	def save_as_png(self, filename, mark_stitch=False):	
 		# Save as PNG image
 		border=5
@@ -398,6 +492,8 @@ class Embroidery:
 
 		sx = int( self.maxx - self.minx)
 		sy = int( self.maxy - self.miny)
+		
+		fact = 72.0 / 254
 				
 		self.str = """<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
@@ -405,7 +501,7 @@ class Embroidery:
 <svg width="%d" height="%d" viewBox="0 -%d %d 0"
      xmlns="http://www.w3.org/2000/svg" version="1.1">
   <title>Embroidery export</title>
-  <path fill=\"none\" stroke=\"black\" d=\"""" % (sx,sy,sx,sy)
+  <path fill=\"none\" stroke=\"black\" d=\"""" % (sx, sy, sx, sy)
 		self.pos = self.coords[0]
 		last_jump = False
 		self.str += "M %d %d" % (self.pos.x, sy - self.pos.y )
@@ -430,6 +526,24 @@ class Embroidery:
 		fp.write(self.export_svg())
 		fp.close()			
 
+	def import_svg(self, filename):
+		first = True
+		jump = False
+		from xml.dom import minidom
+		xmldoc = minidom.parse(filename)
+		itemlist = xmldoc.getElementsByTagName('path') 
+		for s in itemlist :
+			if not first:
+				jump = True
+			t = s.attributes['d'].value.strip().split("M")
+			points = t[1].split("L")
+			for p in points:
+				p = p.strip()
+				x = int(p.split(' ')[0])
+				y = int(p.split(' ')[1])
+				self.addStitch(Point(x, -y, jump))
+				jump = False
+				first = False
 
 ############################################
 #### Turtle and Test classes
@@ -534,3 +648,7 @@ if (__name__=='__main__'):
 	print("test")
 	emb = Embroidery()
 	emb.import_svg("tree.svg")
+	#emb.import_pes("test-files/Pinguin23.pes")
+	#emb.translate_to_origin()
+	emb.scale(1)
+	emb.save_as_png("test.png")
