@@ -55,7 +55,7 @@ class Point:
 		return Point(self.x*scalar, self.y*scalar)
 	
 	def __repr__(self):
-		return "Pt(%s,%s)" % (self.x,self.y)
+		return "Pt(%s,%s,%s)" % (self.x,self.y,self.jump)
 
 	def length(self):
 		return math.sqrt(math.pow(self.x,2.0)+math.pow(self.y,2.0))
@@ -303,7 +303,7 @@ class Embroidery:
 			if byte != "" and len(byte) > 0:
 				if byte == chr(0x80):
 					byte = f.read(1)
-					if byte == chr(0x04) or byte == chr(0x02):					
+					if byte == chr(0x04) or byte == chr(0x02)  or byte == chr(0x00):					
 						jump = True
 					elif byte == chr(0x01) or byte == chr(0x02):
 						dbg.write("ignoring color change")
@@ -362,7 +362,7 @@ class Embroidery:
 			mark_point(last)
 					 		
 		for stitch in self.coords[1:]:
-
+			
 			if stitch.jump:
 				line_color = (255,0,0,0)
 				stitch_color = (0,0,255,0)
@@ -405,15 +405,26 @@ class Embroidery:
 <svg width="%d" height="%d" viewBox="0 -%d %d 0"
      xmlns="http://www.w3.org/2000/svg" version="1.1">
   <title>Embroidery export</title>
-  <path d=\"""" % (sx,sy,sx,sy)
+  <path fill=\"none\" stroke=\"black\" d=\"""" % (sx,sy,sx,sy)
 		self.pos = self.coords[0]
-		self.str += "M %d %d" % (self.coords[0].x, self.coords[0].y )
-		for stitch in self.coords[1:]:
-			self.str += " L %d %d" % (stitch.x,  sy-stitch.y)
-		self.str += "\" fill=\"none\" stroke=\"black\" stroke-width=\"1\"/></svg>"
+		last_jump = False
+		self.str += "M %d %d" % (self.pos.x, sy - self.pos.y )
+		for stitch in self.coords[1:]:			
+			if stitch.jump:
+				if not last_jump:
+					self.str += "\" />\n"
+				last_jump = True
+			else:
+				if last_jump:
+					#self.str += "  <path fill=\"none\" stroke=\"red\" d=\"M %d %d L %d %d\" />\n" % (last_x, sy-last_y, stitch.x,  sy-stitch.y)
+					self.str += "  <path fill=\"none\" stroke=\"black\" d=\"M %d %d" % (stitch.x,  sy - stitch.y)
+					last_jump = False
+				self.str += " L %d %d" % (stitch.x,  sy - stitch.y)
+				last_x = stitch.x
+				last_y = stitch.y
+		self.str += "\" />\n</svg>\n"
 		return self.str		
-
-	# NOT YET READY:			
+		
 	def save_as_svg(self, filename):
 		fp = open(filename, "wb")
 		fp.write(self.export_svg())
@@ -517,6 +528,9 @@ class Hilbert(Turtle):
 		self.right(angle)
 
 if (__name__=='__main__'):
-	Test()
-	Koch(4)
-	Hilbert(4)
+	#Test()
+	#Koch(4)
+	#Hilbert(4)
+	print("test")
+	emb = Embroidery()
+	emb.import_svg("tree.svg")
