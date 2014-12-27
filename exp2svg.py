@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #######################################
 #
-# renders an EXP embroidery file as a SVG image
+# renders an EXP embroidery file as SVG image
 #
 # author:(c) Michael Aschauer <m AT ash.to>
 # www: http:/m.ash.to
@@ -10,7 +10,6 @@
 #
 #######################################
 
-from PIL import Image
 import stitchcode
 import getopt
 import sys
