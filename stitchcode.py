@@ -296,10 +296,14 @@ class Embroidery:
 		(lastx, lasty) = (0,0)
 		(self.maxx, self.maxy) = (0,0)
 		(self.minx, self.miny) = (0,0)
+		
+		# add Stitch at origin or not?
+		self.addStitch(Point(lastx, lasty, False))
+		
 		jump = False
 		f = open(filename, "rb")
 		byte =" "
-		while byte:
+		while byte:			
 			byte = f.read(1)
 			if byte != "" and len(byte) > 0:
 				if byte == chr(0x80):
@@ -309,27 +313,28 @@ class Embroidery:
 					elif byte == chr(0x01) or byte == chr(0x02):
 						dbg.write("ignoring color change")
 					byte = f.read(1)
-					
 				dx = ord(byte)
 				if dx > 127:
 					dx = dx - 256
 				byte = f.read(1)
 				if byte != "":
-					dy = ord(byte)
+					dy = ord(byte)					
 					if dy > 127:
 						dy = dy - 256
 					lastx = lastx + dx
-					lasty = lasty + dy		
-					if dx != 0 and dy != 0:
+					lasty = lasty + dy	
+					if dx != 0 or dy != 0:
 						self.addStitch(Point(lastx, lasty, jump))
-					jump = False
+					jump = False				
 		f.close()
 		dbg.write("loaded file: %s\n" % (filename))
+		dbg.write("number of stitches: %d\n" % len(self.coords))
 		self.translate_to_origin()
 	
 	def import_pes(self, filename):
 		# read in an PES Brother file
 		
+		# helper functions
 		def readInt32(file):
 			data = unpack('<I', file.read(4))[0]
 			return data
@@ -348,7 +353,7 @@ class Embroidery:
 		jump = False
 		f = open(filename, "rb")
 
-		# derived from stitchloader.py
+		# read PES header signature
 		sig = f.read(4)
 		if not sig == "#PES":
 			dbg.write("not an exp file");
@@ -358,14 +363,13 @@ class Embroidery:
 		dbg.write(version)
 		dbg.write("\n")
 		
-		pecstart = readInt32(f)
-		
+		pecstart = readInt32(f)	
 		f.seek(77)
 		width =  readInt16(f)
 		height =  readInt16(f)
 		dbg.write("dimension %d x %d mm\n" %(width/10.0,height/10.0))
 		
-		#No. of colors in file
+		# No. of colors in file
 		f.seek(pecstart + 48)
 		numColors = readInt8(f) + 1
 		dbg.write("%d colors - but ignoring colors for now\n" % numColors)
@@ -427,8 +431,8 @@ class Embroidery:
 		stitch_color = (0,0,255,0)
 		line_color = (0,0,0,0)
 
-		(self.maxx, self.maxy) = (0,0)
-		(self.minx, self.miny) = (9999999,9999999)
+		(self.maxx, self.maxy) = (self.coords[0].x,self.coords[0].y)
+		(self.minx, self.miny) = (self.coords[0].x,self.coords[0].y)
 		for p in self.coords:
 			self.minx = min(self.minx,p.x)
 			self.miny = min(self.miny,p.y)
@@ -438,6 +442,7 @@ class Embroidery:
 		sx = int( self.maxx - self.minx + 2*border )
 		sy = int( self.maxy - self.miny + 2*border )
 
+		dbg.write("creating image with size %d x %d\n" % (sx,sy))
 		img = Image.new("RGB", (sx,sy), (255,255,255))
 		draw  =  ImageDraw.Draw(img)	
 		last = self.coords[0]
@@ -482,8 +487,8 @@ class Embroidery:
 	
 				
 	def export_svg(self, dbg=sys.stderr):
-		(self.maxx, self.maxy) = (0,0)
-		(self.minx, self.miny) = (9999999,9999999)
+		(self.maxx, self.maxy) = (self.coords[0].x,self.coords[0].y)
+		(self.minx, self.miny) = (self.coords[0].x,self.coords[0].y)
 		for p in self.coords:
 			self.minx = min(self.minx,p.x)
 			self.miny = min(self.miny,p.y)
@@ -493,6 +498,7 @@ class Embroidery:
 		sx = int( self.maxx - self.minx)
 		sy = int( self.maxy - self.miny)
 		
+		# conversion factor - not yet used!
 		fact = 72.0 / 254
 				
 		self.str = """<?xml version="1.0" standalone="no"?>

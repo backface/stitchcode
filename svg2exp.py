@@ -70,13 +70,9 @@ if __name__ == '__main__':
 	
 	if not outfile:
 		outfile = "%s.exp" % infile[:-4] 
-	
-	outfile_png = "%s.png" % outfile[:-4]
-
 	emb = stitchcode.Embroidery()
 	emb.import_svg(infile)
 	emb.scale(zoom)
 	emb.save_as_exp(outfile)
-	emb.save_as_png(outfile_png)
 
 		
