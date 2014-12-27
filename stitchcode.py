@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------
 # stitchcode - a simple Embroidery class for python
 # ------------------------------------------------------------------
-# Copyright (C) 2013 Michael Aschauer
+# Copyright (C) 2013-2015 Michael Aschauer
 # ------------------------------------------------------------------
 # originaly derived and forked from PyEmb.py
 # see: http://www.achatina.de/sewing/main/TECHNICL.HTM
@@ -27,10 +27,11 @@
 import math
 import sys
 from struct import unpack
-from PIL import Image,ImageDraw
+from PIL import Image, ImageDraw
 dbg = sys.stderr
 
-def abs(x):
+
+def abs(x):	
 	if (x<0): return -x
 	return x
 
@@ -56,16 +57,16 @@ class Point:
 		return Point(self.x*scalar, self.y*scalar)
 	
 	def __repr__(self):
-		return "Pt(%s,%s,%s)" % (self.x,self.y,self.jump)
+		return "Pt(%s,%s,%s)" % (self.x, self.y, self.jump)
 
 	def length(self):
-		return math.sqrt(math.pow(self.x,2.0)+math.pow(self.y,2.0))
+		return math.sqrt(math.pow(self.x, 2.0) + math.pow(self.y, 2.0))
 
 	def as_int(self):
 		return Point(int(round(self.x)), int(round(self.y)))
 
 	def as_tuple(self):
-		return (self.x,self.y)
+		return (self.x, self.y)
 
 	def __cmp__(self, other):
 		return cmp(self.as_tuple(), other.as_tuple())
@@ -84,38 +85,51 @@ class Embroidery:
 		self.miny = 0
 		self.maxy = 0
 		
-	def setMaxStitchLength(clamp=127):
+	def setMaxStitchLength(self, clamp=127):
 		self.clamp = clamp
 
 	def addStitch(self, coord):
 		self.coords.append(coord)
 
 	def translate_to_origin(self):
-		(self.minx,self.maxx) = (9999999,0)
-		(self.miny,self.maxy) = (9999999,0)
+		"""translates embroidery to origin
+
+		Args: none
+		"""
+		(self.minx, self.maxx) = (self.coords[0].x, 0)
+		(self.miny, self.maxy) = (self.coords[0].y, 0)
 		if (len(self.coords)==0):
 			return
 		for p in self.coords:
-			self.minx = min(self.minx,p.x)
-			self.miny = min(self.miny,p.y)
-			self.maxx = max(self.maxx,p.x)
-			self.maxy = max(self.maxy,p.y)
-		sx = self.maxx-self.minx
-		sy = self.maxy-self.miny
+			self.minx = min(self.minx, p.x)
+			self.miny = min(self.miny, p.y)
+			self.maxx = max(self.maxx, p.x)
+			self.maxy = max(self.maxy, p.y)
+		sx = self.maxx - self.minx
+		sy = self.maxy - self.miny
 		for p in self.coords:
 			p.x -= self.minx
 			p.y -= self.miny
-		dbg.write("translated to origin. resulting field size: %0.2fmm x %0.2fmm\n" % (sx/10,sy/10))
+		dbg.write("translated to origin. resulting field size: %0.2fmm x %0.2fmm\n" % (sx/10, sy/10))
 
-	def scale(self, sc):
-		dbg.write("scale to %d%%\n" % (sc * 100))
+	def scale(self, factor):
+		"""scales embroidery design
+
+		Args:
+			factor: multiplication factor (1 means no scaling)
+		"""		
+		dbg.write("scale to %d%%\n" % (factor * 100))
 		for p in self.coords:
-			p.x *= sc
-			p.y *= sc
+			p.x *= factor
+			p.y *= factor
 
-	def add_endstitches(self, length=10, max_stitch_length=127, dbg=sys.stderr):
-		# adds endstitches before and after stitches that are too long
-		
+	def add_endstitches(self, length=10, max_stitch_length=127):
+		"""adds endstitches before and after stitches that are too long
+
+		Args:
+			length: length of end stitches (default = 10)
+			max_stitch_length: max. length for stitches (default = 127)
+		"""				
 		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -124,26 +138,29 @@ class Embroidery:
 			new_int = stitch.as_int()
 			old_int = self.pos.as_int()
 			delta = new_int - old_int		
-			dmax = max(abs(delta.x),abs(delta.y))
+			dmax = max(abs(delta.x), abs(delta.y))
 
 			if dmax <= max_stitch_length:
 				new_coords.append(stitch)				
 			else:
 				x2 = length * delta.x / delta.length()
 				y2 = length * delta.y / delta.length()
-				new_coords.append(Point(old_int.x+x2,old_int.y+y2))
+				new_coords.append(Point(old_int.x+x2, old_int.y+y2))
 				new_coords.append(self.pos)
 				new_coords.append(stitch)			
-				new_coords.append(Point(new_int.x-x2,new_int.y-y2))
+				new_coords.append(Point(new_int.x-x2, new_int.y-y2))
 				new_coords.append(stitch)						
 			self.pos = stitch
 		self.coords = new_coords
 		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))
 	
 	
-	def add_endstitches_to_jumps(self, length=10, dbg=sys.stderr):
-		# adds endstitches before and after jump stitches.		
-		
+	def add_endstitches_to_jumps(self, length=10):		
+		"""adds endstitches before and after jumps.	
+
+		Args:
+			length: length of end stitches (default = 10)
+		"""				
 		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -179,8 +196,12 @@ class Embroidery:
 		self.coords = new_coords
 		dbg.write("add endstitches END - stitch count: %d\n" % len(self.coords))		
 
-	def to_triple_stitches(self, length=2, dbg=sys.stderr):
-		# convert to triple stitches	
+	def to_triple_stitches(self, length=2):
+		"""convert desgin to triple stitches
+
+		Args:
+			length: length/offset of triple (default = 2)
+		"""			
 		dbg.write("to_triple_stitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -201,8 +222,12 @@ class Embroidery:
 		self.coords = new_coords
 		dbg.write("to_triple_stitches END - stitch count: %d\n" % len(self.coords))
 
-	def to_red_work(self, length=3, dbg=sys.stderr):
-		# convert to triple stitches	
+	def to_red_work(self, length=3):
+		"""convert desgin to red work stitches
+
+		Args:
+			length: length/offset of triple (default = 3)
+		"""					
 		dbg.write("to_triple_stitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -225,9 +250,12 @@ class Embroidery:
 		self.coords = new_coords
 		dbg.write("to_triple_stitches END - stitch count: %d\n" % len(self.coords))
 		
-	def flatten(self, max_length=127, dbg=sys.stderr):
-		# flatten file - interpolate stitches that are too long
-		
+	def flatten(self, max_length=127):
+		"""flatten file - interpolate stitches that are too long
+
+		Args:
+			max_length: maximum stitch length (default = 127)
+		"""					
 		dbg.write("flatten BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
@@ -238,13 +266,13 @@ class Embroidery:
 			delta = new_stitch - last_stitch
 			if delta.length:	
 				#do several interpolated steps if too long			
-				dmax = max(abs(delta.x),abs(delta.y))
+				dmax = max(abs(delta.x), abs(delta.y))
 				dsteps = abs(dmax / max_length) + 1
 				if dmax > max_length and not stitch.jump:
 					for i in range(0, dsteps):					
 						x =  last_stitch.x + (i+1) * delta.x/dsteps					
 						y = last_stitch.y +  (i+1) * delta.y/dsteps
-						new_coords.append(Point(x,y))			
+						new_coords.append(Point(x, y))			
 				else:
 					new_coords.append(stitch)
 				self.pos = stitch
@@ -256,14 +284,22 @@ class Embroidery:
 	############################################
 
 	def save_as_exp(self, filename):
-		# save as EXP File
+		"""save design as EXP/Melco formated file
+
+		Args:
+			filename
+		"""			
 		f = open(filename, "wb")
 		f.write(self.export_melco())		
 		f.close()
 		dbg.write("saved to file: %s\n" % (filename))
 		
-	def export_melco(self, dbg=sys.stderr):
-		# return stitches in EXP/Melco format
+	def export_melco(self):
+		"""converts stitches to EXP/Melco format
+
+		Returns:
+			string (EXP/Melco)
+		"""				
 		self.str = ""
 		self.pos = self.coords[0]
 		dbg.write("Export - stitch count: %d\n" % len(self.coords))
@@ -273,36 +309,41 @@ class Embroidery:
 			old_int = self.pos.as_int()
 			delta = new_int - old_int	
 							
-			def move(x,y):
+			def move(x, y):
 				if (x<0): x = x + 256
-				self.str+=chr(x)
+				self.str += chr(x)
 				if (y<0): y = y + 256
-				self.str+=chr(y)
+				self.str += chr(y)
 				
 			#do several interpolated steps if too long			
-			dmax = max(abs(delta.x),abs(delta.y))
+			dmax = max(abs(delta.x), abs(delta.y))
 			dsteps = abs(dmax / 127) + 1
 			for i in range(0,dsteps):
 				if stitch.jump:
-					self.str+=chr(0x80)
-					self.str+=chr(0x04)
+					self.str += chr(0x80)
+					self.str += chr(0x04)
 				move(delta.x/dsteps, delta.y/dsteps)	
 			self.pos = stitch
 			
 		return self.str
 		
 	def import_melco(self, filename):
+		"""read an EXP/Melco file
+
+		Args:
+			filename
+		"""				
 		# read in an EXP/Melco file
-		(lastx, lasty) = (0,0)
-		(self.maxx, self.maxy) = (0,0)
-		(self.minx, self.miny) = (0,0)
+		(lastx, lasty) = (0, 0)
+		(self.maxx, self.maxy) = (0, 0)
+		(self.minx, self.miny) = (0, 0)
 		
 		# add Stitch at origin or not?
 		self.addStitch(Point(lastx, lasty, False))
 		
 		jump = False
 		f = open(filename, "rb")
-		byte =" "
+		byte = " "
 		while byte:			
 			byte = f.read(1)
 			if byte != "" and len(byte) > 0:
@@ -332,24 +373,28 @@ class Embroidery:
 		self.translate_to_origin()
 	
 	def import_pes(self, filename):
-		# read in an PES Brother file
+		"""read a PES Brother file
+
+		Args:
+			filename
+		"""			
 		
 		# helper functions
-		def readInt32(file):
-			data = unpack('<I', file.read(4))[0]
+		def readInt32(f):
+			data = unpack('<I', f.read(4))[0]
 			return data
 
-		def readInt16(file):
-			data = int(unpack('H', file.read(2))[0])
+		def readInt16(f):
+			data = int(unpack('H', f.read(2))[0])
 			return data	
 					
-		def readInt8(file):
-			data = int(unpack('B', file.read(1))[0])
+		def readInt8(f):
+			data = int(unpack('B', f.read(1))[0])
 			return data		
 					
-		(lastx, lasty) = (0,0)
-		(self.maxx, self.maxy) = (0,0)
-		(self.minx, self.miny) = (0,0)
+		(lastx, lasty) = (0, 0)
+		(self.maxx, self.maxy) = (0, 0)
+		(self.minx, self.miny) = (0, 0)
 		jump = False
 		f = open(filename, "rb")
 
@@ -367,7 +412,7 @@ class Embroidery:
 		f.seek(77)
 		width =  readInt16(f)
 		height =  readInt16(f)
-		dbg.write("dimension %d x %d mm\n" %(width/10.0,height/10.0))
+		dbg.write("dimension %d x %d mm\n" % (width/10.0, height/10.0))
 		
 		# No. of colors in file
 		f.seek(pecstart + 48)
@@ -394,7 +439,7 @@ class Embroidery:
 					jump = True
 					x = ((val1 & 15) * 256) + val2
 					if x & 2048 == 2048: # 0x0800
-						x= x - 4096
+						x = x - 4096
 					#read next byte for Y value
 					val2 = readInt8(f)
 				else:
@@ -425,25 +470,30 @@ class Embroidery:
 				self.addStitch(Point(lastx, lasty, jump))
 			
 	def save_as_png(self, filename, mark_stitch=False):	
-		# Save as PNG image
-		border=5
+		"""save design as PNG image
+		
+		Args:
+			filename
+			mark_stitches: boolean (mark stitches with "X")
+		"""			
+		border = 5
 		stc = 2
-		stitch_color = (0,0,255,0)
-		line_color = (0,0,0,0)
+		stitch_color = (0, 0, 255, 0)
+		line_color = (0, 0, 0, 0)
 
-		(self.maxx, self.maxy) = (self.coords[0].x,self.coords[0].y)
-		(self.minx, self.miny) = (self.coords[0].x,self.coords[0].y)
+		(self.maxx, self.maxy) = (self.coords[0].x, self.coords[0].y)
+		(self.minx, self.miny) = (self.coords[0].x, self.coords[0].y)
 		for p in self.coords:
-			self.minx = min(self.minx,p.x)
-			self.miny = min(self.miny,p.y)
-			self.maxx = max(self.maxx,p.x)
-			self.maxy = max(self.maxy,p.y)
+			self.minx = min(self.minx, p.x)
+			self.miny = min(self.miny, p.y)
+			self.maxx = max(self.maxx, p.x)
+			self.maxy = max(self.maxy, p.y)
 
 		sx = int( self.maxx - self.minx + 2*border )
 		sy = int( self.maxy - self.miny + 2*border )
 
 		dbg.write("creating image with size %d x %d\n" % (sx,sy))
-		img = Image.new("RGB", (sx,sy), (255,255,255))
+		img = Image.new("RGB", (sx, sy), (255, 255, 255))
 		draw  =  ImageDraw.Draw(img)	
 		last = self.coords[0]
 				
@@ -463,8 +513,8 @@ class Embroidery:
 		for stitch in self.coords[1:]:
 			
 			if stitch.jump:
-				line_color = (255,0,0,0)
-				stitch_color = (0,0,255,0)
+				line_color = (255, 0, 0, 0)
+				stitch_color = (0, 0, 255, 0)
 			else:
 				line_color = (0,0,0,0)
 				stitch_color = (0,0,255,0)
@@ -486,20 +536,26 @@ class Embroidery:
 		dbg.write("saved image to file: %s\n" % (filename))
 	
 				
-	def export_svg(self, dbg=sys.stderr):
-		(self.maxx, self.maxy) = (self.coords[0].x,self.coords[0].y)
-		(self.minx, self.miny) = (self.coords[0].x,self.coords[0].y)
+	def export_svg(self):
+		"""converts design to SVG paths 
+		
+		Return:
+			string with SVG-data
+		"""					
+		(self.maxx, self.maxy) = (self.coords[0].x, self.coords[0].y)
+		(self.minx, self.miny) = (self.coords[0].x, self.coords[0].y)
 		for p in self.coords:
-			self.minx = min(self.minx,p.x)
-			self.miny = min(self.miny,p.y)
-			self.maxx = max(self.maxx,p.x)
-			self.maxy = max(self.maxy,p.y)
+			self.minx = min(self.minx, p.x)
+			self.miny = min(self.miny, p.y)
+			self.maxx = max(self.maxx, p.x)
+			self.maxy = max(self.maxy, p.y)
 
 		sx = int( self.maxx - self.minx)
 		sy = int( self.maxy - self.miny)
 		
-		# conversion factor - not yet used!
-		fact = 72.0 / 254
+		# TODO convert to pixel
+		# conversion factor: 
+		# fact = 72.0 / 254
 				
 		self.str = """<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
@@ -522,17 +578,25 @@ class Embroidery:
 					self.str += "  <path fill=\"none\" stroke=\"black\" d=\"M %d %d" % (stitch.x,  sy - stitch.y)
 					last_jump = False
 				self.str += " L %d %d" % (stitch.x,  sy - stitch.y)
-				last_x = stitch.x
-				last_y = stitch.y
 		self.str += "\" />\n</svg>\n"
 		return self.str		
 		
 	def save_as_svg(self, filename):
-		fp = open(filename, "wb")
-		fp.write(self.export_svg())
-		fp.close()			
+		"""save design as AVG vector image
+		
+		Args:
+			filename
+		"""					
+		f = open(filename, "wb")
+		f.write(self.export_svg())
+		f.close()			
 
 	def import_svg(self, filename):
+		"""read a SVG file (for now just what we have written ourselves)
+		
+		Args:
+			filename
+		"""					
 		first = True
 		jump = False
 		from xml.dom import minidom
