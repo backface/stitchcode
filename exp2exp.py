@@ -16,9 +16,9 @@ import sys
 
 def usage():
 	print """
-usage: exp2png.py [options] -i EXP-FILE -o PNG-FILE
+usage: exp2png.py [options] -i EXP-FILE -o EXP-FILE
 
-renders an EXP embroidery file as a PNG image
+applies conversions to EXP/Melco embroidery files.
 
 options:
     -h, --help              print usage
