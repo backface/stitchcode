@@ -96,8 +96,8 @@ class Embroidery:
 
 		Args: none
 		"""
-		(self.minx, self.maxx) = (self.coords[0].x, 0)
-		(self.miny, self.maxy) = (self.coords[0].y, 0)
+		(self.minx, self.maxx) = (self.coords[0].x, self.coords[0].x)
+		(self.miny, self.maxy) = (self.coords[0].y, self.coords[0].y)
 		if (len(self.coords)==0):
 			return
 		for p in self.coords:
@@ -300,32 +300,51 @@ class Embroidery:
 		Returns:
 			string (EXP/Melco)
 		"""				
-		self.str = ""
+		self.string = ""
 		self.pos = self.coords[0]
 		dbg.write("Export - stitch count: %d\n" % len(self.coords))
 		
-		for stitch in self.coords[1:]:		
+		for stitch in self.coords[0:]:		
 			new_int = stitch.as_int()
 			old_int = self.pos.as_int()
 			delta = new_int - old_int	
 							
 			def move(x, y):
 				if (x<0): x = x + 256
-				self.str += chr(x)
+				self.string += chr(x)
 				if (y<0): y = y + 256
-				self.str += chr(y)
+				self.string += chr(y)
 				
-			#do several interpolated steps if too long			
+			#do several interpolated steps if too long	
+			#dbg.write("delta: %d, %d\n" % (delta.x,delta.y))
+			sum_x = 0
+			sum_y = 0
 			dmax = max(abs(delta.x), abs(delta.y))
 			dsteps = abs(dmax / 127) + 1
-			for i in range(0,dsteps):
+			if dsteps == 1:
 				if stitch.jump:
-					self.str += chr(0x80)
-					self.str += chr(0x04)
-				move(delta.x/dsteps, delta.y/dsteps)	
+					self.string += chr(0x80)
+					self.string += chr(0x04)
+				#dbg.write("move: %d, %d\n" % (delta.x, delta.y))				
+				move(delta.x, delta.y)
+			else:
+				for i in range(0,dsteps):
+					if stitch.jump:
+						self.string += chr(0x80)
+						self.string += chr(0x04)
+					if i < dsteps -1:
+						#dbg.write("move: %d, %d\n" % (delta.x/dsteps, delta.y/dsteps))
+						move(delta.x/dsteps, delta.y/dsteps)
+						sum_x += delta.x/dsteps
+						sum_y += delta.y/dsteps
+					else:
+						#dbg.write("move: %d, %d\n" % (delta.x - sum_x, delta.y - sum_y))
+						move(delta.x - sum_x, delta.y - sum_y)
+						
 			self.pos = stitch
+			#dbg.write("sum: %d, %d\n" % (sum_x,sum_y))
 			
-		return self.str
+		return self.string
 		
 	def import_melco(self, filename):
 		"""read an EXP/Melco file
@@ -510,7 +529,7 @@ class Embroidery:
 		if(mark_stitch and not last.jump):
 			mark_point(last)
 					 		
-		for stitch in self.coords[1:]:
+		for stitch in self.coords[0:]:
 			
 			if stitch.jump:
 				line_color = (255, 0, 0, 0)
@@ -567,7 +586,7 @@ class Embroidery:
 		self.pos = self.coords[0]
 		last_jump = False
 		self.str += "M %d %d" % (self.pos.x, sy - self.pos.y )
-		for stitch in self.coords[1:]:			
+		for stitch in self.coords[0:]:			
 			if stitch.jump:
 				if not last_jump:
 					self.str += "\" />\n"

@@ -78,5 +78,3 @@ if __name__ == '__main__':
 	emb.import_melco(infile)
 	emb.scale(zoom)
 	emb.save_as_png(outfile, show_stitches)
-
-		
