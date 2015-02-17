@@ -8,3 +8,6 @@ current features:
 * read SVG files - only those written by the library
 * scaling, flattening
 * conversion to different stitch types (double, triple, redwork,...)
+
+currently DOES NOT support:
+* color changes

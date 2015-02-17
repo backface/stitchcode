@@ -523,7 +523,8 @@ class Embroidery:
 					writeInt8(f,delta.x)
 				else:
 					writeInt8(f,delta.x + 128)
-					
+				
+				delta.y *= -1	
 				if delta.y >= 0:
 					writeInt8(f,delta.y)
 				else:
@@ -566,7 +567,7 @@ class Embroidery:
 		# read PES header signature
 		sig = f.read(4)
 		if not sig == "#PES":
-			dbg.write("not an exp file");
+			dbg.write("not a PES file");
 			exit()
 		dbg.write("found PES header - version ")
 		version = f.read(4)
@@ -882,12 +883,9 @@ if (__name__=='__main__'):
 	#Hilbert(4)
 	print("test")
 	emb = Embroidery()
+	emb.import_melco("test-files/MerAut.exp")
 	#emb.import_svg("tree.svg")
-	emb.import_pes("test-files/ptest.pes")
+	#emb.import_pes("test-files/ptest.pes")
 	#emb.translate_to_origin()
 	emb.scale(1)
-	emb.save_as_pes("ptest.pes")
-	emb = Embroidery()
-	emb.import_pes("ptest.pes")
-	emb.save_as_exp("ptest.exp")
-	emb.save_as_png("ptest.png")
+	emb.save_as_pes("test-files/MerAut.pes")
