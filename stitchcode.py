@@ -26,7 +26,7 @@
 
 import math
 import sys
-from struct import unpack
+from struct import unpack,pack
 from PIL import Image, ImageDraw
 dbg = sys.stderr
 
@@ -390,6 +390,152 @@ class Embroidery:
 		dbg.write("loaded file: %s\n" % (filename))
 		dbg.write("number of stitches: %d\n" % len(self.coords))
 		self.translate_to_origin()
+		
+	def save_as_pes(self, filename):
+		"""converts stitches to EXP/Melco format
+
+		Returns:
+			string (EXP/Melco)
+		"""		
+		self.flatten(max_length=63)
+		
+		(self.minx, self.maxx) = (self.coords[0].x, self.coords[0].x)
+		(self.miny, self.maxy) = (self.coords[0].y, self.coords[0].y)
+		if (len(self.coords)==0):
+			return
+		for p in self.coords:
+			self.minx = min(self.minx, p.x)
+			self.miny = min(self.miny, p.y)
+			self.maxx = max(self.maxx, p.x)
+			self.maxy = max(self.maxy, p.y)
+		sx = self.maxx - self.minx
+		sy = self.maxy - self.miny
+
+		# helper functions
+		def writeInt32(f,i):
+			f.write(pack('<I', i))
+
+		def writeInt16(f,i):
+			f.write(pack('H', i))
+					
+		def writeInt8(f,i):
+			f.write(pack('B', i))	
+							
+		
+		self.pos = self.coords[0]
+		dbg.write("Export - stitch count: %d\n" % len(self.coords))
+		
+		f = open(filename,"w")
+		
+		# PES Block v1		
+		f.write("#PES0001")		
+		
+		writeInt32(f,0) # pecblock pointer	
+			
+		writeInt16(f,0) #  a value of 1 here seems to indicate design data is over 100KB long, or 0 for less than 100KB
+		writeInt16(f,1)
+		writeInt16(f,1)
+		writeInt16(f,0xFFFF)
+		writeInt16(f,0)
+		
+		# CEmbOne Block v1
+		writeInt16(f,7)
+		f.write("CEmbOne")
+		
+		writeInt16(f,0) # min x?
+		writeInt16(f,0) # min y?
+		writeInt16(f,0) # max x?
+		writeInt16(f,0) # max y?	
+		
+		writeInt16(f,0) # min x?
+		writeInt16(f,0) # min y?
+		writeInt16(f,0) # max x?
+		writeInt16(f,0) # max y?	
+		
+		writeInt32(f,0)
+		writeInt32(f,0)
+		writeInt32(f,0)
+		writeInt32(f,0)	
+		writeInt32(f,0)	
+		writeInt32(f,0)	
+		
+		writeInt16(f,1)		
+		writeInt16(f,0)
+		writeInt16(f,0)
+		writeInt16(f,0)
+		writeInt16(f,0)	
+		writeInt16(f,0)
+		writeInt16(f,0)
+		writeInt16(f,0)
+		writeInt16(f,0)
+		writeInt16(f,0)
+		writeInt16(f,0)
+		writeInt16(f,0)
+
+		# CEmbOne Block v1
+		writeInt16(f,7)
+		f.write("CSewSeq")
+		
+		#CSewSeg Stitch Data
+		writeInt32(f,0)
+	
+		
+		#PEC Code Block Stitch Data
+		pecstart = f.tell() 			
+		for i in range(0,550):
+			writeInt8(f,0)
+
+		f.seek(8)
+		writeInt32(f,pecstart)
+		f.seek(77)
+		writeInt16(f,sx) # width
+		writeInt16(f,sy) # height
+		f.seek(pecstart+49)
+		writeInt8(f,0) # num colors
+		f.seek(pecstart+532)
+		
+		for stitch in self.coords[0:]:		
+			new_int = stitch.as_int()
+			old_int = self.pos.as_int()
+			delta = new_int - old_int	
+							
+			if stitch.jump:
+				dbg.write("export to PES: missing jump stitches!!!!!\n")
+
+				x = abs(delta.x) & 0x7FF
+				if x < 0:
+					x =  (x + 0x1000 & 0x7FF) | 0x800
+				
+				x = ((x >> 8) & 0x0F) | 0x80
+				writeInt8(f,x)
+				writeInt8(f,(x & 0xFF))	
+				
+				y= abs(delta.y) & 0x7FF
+				if y < 0:
+					y =  (y + 0x1000 & 0x7FF) | 0x800
+				
+				y= ((y >> 8) & 0x0F) | 0x80
+				writeInt8(f,y)		
+				writeInt8(f,(y & 0xFF))		
+
+			else:
+				if delta.x >= 0:
+					writeInt8(f,delta.x)
+				else:
+					writeInt8(f,delta.x + 128)
+					
+				if delta.y >= 0:
+					writeInt8(f,delta.y)
+				else:
+					writeInt8(f,delta.y+128)
+												
+			self.pos = stitch		
+		
+		writeInt8(f,0xFF)
+		writeInt8(f,0x00)
+		
+		f.close()
+
 	
 	def import_pes(self, filename):
 		"""read a PES Brother file
@@ -736,8 +882,12 @@ if (__name__=='__main__'):
 	#Hilbert(4)
 	print("test")
 	emb = Embroidery()
-	emb.import_svg("tree.svg")
-	#emb.import_pes("test-files/Pinguin23.pes")
+	#emb.import_svg("tree.svg")
+	emb.import_pes("test-files/ptest.pes")
 	#emb.translate_to_origin()
 	emb.scale(1)
-	emb.save_as_png("test.png")
+	emb.save_as_pes("ptest.pes")
+	emb = Embroidery()
+	emb.import_pes("ptest.pes")
+	emb.save_as_exp("ptest.exp")
+	emb.save_as_png("ptest.png")
