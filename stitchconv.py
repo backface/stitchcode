@@ -102,7 +102,7 @@ if __name__ == '__main__':
 		print "convert to red work stitches"
 		emb.to_red_work(distance*10)
 		
-	if show_stitches and lower(outfile[-3:]) == "png":
+	if show_stitches and (outfile[-3:]).lower() == "png":
 		emb.save_as_png(outfile, show_stitches)
 	else:
 		emb.save(outfile)
