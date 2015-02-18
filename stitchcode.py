@@ -283,6 +283,47 @@ class Embroidery:
 	#### FILE IMPORT AND EXPORT
 	############################################
 
+	def save(self, filename):
+		"""save design as file - a wrapper that figures out which format
+			funtion to use by filename extension
+		Args:
+			filename
+		"""					
+		ext = (filename[-3:]).lower()
+		if ext == "exp":
+			self.save_as_exp(filename)
+		elif ext == "png":
+			self.save_as_png(filename)
+		elif ext == "pes":
+			self.save_as_pes(filename)
+		elif ext == "svg":
+			self.save_as_svg(filename)
+		else:
+			dbg.write("error saving file: unknown file extension: %s\n" % (filename))
+			
+			
+	def load(self, filename):
+		"""import design from file - a wrapper that figures out which format
+			funtion to use by filename extension
+		Args:
+			filename
+		"""					
+		ext = (filename[-3:]).lower()
+		if ext == "exp":
+			self.import_melco(filename)
+		elif ext == "pes":
+			self.import_pes(filename)
+		elif ext == "svg":
+			self.import_svg(filename)
+		else:
+			dbg.write("error loading file: unknown input file extension: %s\n" % (filename))
+			
+						
+	############################################
+	#### MELCO / EXP
+	############################################
+	
+
 	def save_as_exp(self, filename):
 		"""save design as EXP/Melco formated file
 
@@ -294,15 +335,16 @@ class Embroidery:
 		f.close()
 		dbg.write("saved to file: %s\n" % (filename))
 		
+		
 	def export_melco(self):
-		"""converts stitches to EXP/Melco format
+		"""converts design to EXP/Melco format
 
 		Returns:
 			string (EXP/Melco)
 		"""				
 		self.string = ""
 		self.pos = self.coords[0]
-		dbg.write("Export - stitch count: %d\n" % len(self.coords))
+		dbg.write("export - stitch count: %d\n" % len(self.coords))
 		
 		for stitch in self.coords[0:]:		
 			new_int = stitch.as_int()
@@ -371,7 +413,7 @@ class Embroidery:
 					if byte == chr(0x04) or byte == chr(0x02)  or byte == chr(0x00):					
 						jump = True
 					elif byte == chr(0x01) or byte == chr(0x02):
-						dbg.write("ignoring color change")
+						dbg.write("reading EXP: ignore color change")
 					byte = f.read(1)
 				dx = ord(byte)
 				if dx > 127:
@@ -387,16 +429,26 @@ class Embroidery:
 						self.addStitch(Point(lastx, lasty, jump))
 					jump = False				
 		f.close()
-		dbg.write("loaded file: %s\n" % (filename))
-		dbg.write("number of stitches: %d\n" % len(self.coords))
+		dbg.write("reading EXP: loaded from file: %s\n" % (filename))
+		dbg.write("reading EXP: number of stitches: %d\n" % len(self.coords))
 		self.translate_to_origin()
-		
+
+
+	############################################
+	#### Brother / PES
+	############################################
+	
+			
 	def save_as_pes(self, filename):
 		"""converts stitches to EXP/Melco format
 
 		Returns:
 			string (EXP/Melco)
 		"""		
+	
+		dbg.write("Warning: PES export is still experimental!")	
+		# PES has maximum value of 64 for stitch lengt p direction
+		
 		self.flatten(max_length=63)
 		
 		(self.minx, self.maxx) = (self.coords[0].x, self.coords[0].x)
@@ -423,7 +475,7 @@ class Embroidery:
 							
 		
 		self.pos = self.coords[0]
-		dbg.write("Export - stitch count: %d\n" % len(self.coords))
+		dbg.write("export - stitch count: %d\n" % len(self.coords))
 		
 		f = open(filename,"w")
 		
@@ -500,7 +552,7 @@ class Embroidery:
 			delta = new_int - old_int	
 							
 			if stitch.jump:
-				dbg.write("export to PES: missing jump stitches!!!!!\n")
+				dbg.write("export to PES: ignore jump stitches!!!!!\n")
 
 				x = abs(delta.x) & 0x7FF
 				if x < 0:
@@ -567,9 +619,9 @@ class Embroidery:
 		# read PES header signature
 		sig = f.read(4)
 		if not sig == "#PES":
-			dbg.write("not a PES file");
+			dbg.write("error reading PES: not a PES file!");
 			exit()
-		dbg.write("found PES header - version ")
+		dbg.write("reading PES file: header found - version ")
 		version = f.read(4)
 		dbg.write(version)
 		dbg.write("\n")
@@ -578,12 +630,12 @@ class Embroidery:
 		f.seek(77)
 		width =  readInt16(f)
 		height =  readInt16(f)
-		dbg.write("dimension %d x %d mm\n" % (width/10.0, height/10.0))
+		dbg.write("reading PES: dimension is %d x %d mm\n" % (width/10.0, height/10.0))
 		
 		# No. of colors in file
 		f.seek(pecstart + 48)
 		numColors = readInt8(f) + 1
-		dbg.write("%d colors - but ignoring colors for now\n" % numColors)
+		dbg.write("reading PES:  %d colors - but ignoring colors for now\n" % numColors)
 
 		# derived from stitchloader.py
 		# Beginning of stitch data
@@ -598,7 +650,7 @@ class Embroidery:
 				break
 			elif val1 == 254 and val2 == 176:
 				nn = readInt8(f)
-				dbg.write("ignoring color change\n")
+				dbg.write("reading PES: ignoring color change\n")
 			else:
 				if val1 & 128 == 128: # 0x80
 					#this is a jump stitch
@@ -635,6 +687,12 @@ class Embroidery:
 				lasty = lasty + y	
 				self.addStitch(Point(lastx, lasty, jump))
 			
+
+	############################################
+	#### PNG
+	############################################
+	
+	
 	def save_as_png(self, filename, mark_stitch=False):	
 		"""save design as PNG image
 		
@@ -658,7 +716,7 @@ class Embroidery:
 		sx = int( self.maxx - self.minx + 2*border )
 		sy = int( self.maxy - self.miny + 2*border )
 
-		dbg.write("creating image with size %d x %d\n" % (sx,sy))
+		dbg.write("creating PNG image with size %d x %d\n" % (sx,sy))
 		img = Image.new("RGB", (sx, sy), (255, 255, 255))
 		draw  =  ImageDraw.Draw(img)	
 		last = self.coords[0]
@@ -699,8 +757,13 @@ class Embroidery:
 								
 			last = p		
 		img.save(filename, "PNG")	
-		dbg.write("saved image to file: %s\n" % (filename))
-	
+		dbg.write("saving image to file: %s\n" % (filename))
+
+
+	############################################
+	#### SVG
+	############################################
+		
 				
 	def export_svg(self):
 		"""converts design to SVG paths 
@@ -755,14 +818,18 @@ class Embroidery:
 		"""					
 		f = open(filename, "wb")
 		f.write(self.export_svg())
-		f.close()			
+		f.close()
+		dbg.write("saving SVG to file: %s\n" % (filename))		
 
 	def import_svg(self, filename):
 		"""read a SVG file (for now just what we have written ourselves)
 		
 		Args:
 			filename
-		"""					
+		"""			
+		dbg.write("loading SVG: %s\n" % (filename))	
+		dbg.write("Warning: SVG import is experimental!")	
+					
 		first = True
 		jump = False
 		from xml.dom import minidom
@@ -780,6 +847,8 @@ class Embroidery:
 				self.addStitch(Point(x, -y, jump))
 				jump = False
 				first = False
+
+
 
 ############################################
 #### Turtle and Test classes
