@@ -90,6 +90,19 @@ class Embroidery:
 
 	def addStitch(self, coord):
 		self.coords.append(coord)
+		
+	def getSize(self):
+		(self.maxx, self.maxy) = (self.coords[0].x, self.coords[0].y)
+		(self.minx, self.miny) = (self.coords[0].x, self.coords[0].y)
+		for p in self.coords:
+			self.minx = min(self.minx, p.x)
+			self.miny = min(self.miny, p.y)
+			self.maxx = max(self.maxx, p.x)
+			self.maxy = max(self.maxy, p.y)
+
+		sx = int( self.maxx - self.minx )
+		sy = int( self.maxy - self.miny )
+		return (sx,sy)
 
 	def translate_to_origin(self):
 		"""translates embroidery to origin
