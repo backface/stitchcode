@@ -311,6 +311,10 @@ class Embroidery:
 			self.save_as_pes(filename)
 		elif ext == "svg":
 			self.save_as_svg(filename)
+		elif ext == "ksm":
+			self.save_as_ksm(filename)
+		elif ext == "dst":
+			self.save_as_dst(filename)
 		else:
 			dbg.write("error saving file: unknown file extension: %s\n" % (filename))
 			
@@ -331,6 +335,76 @@ class Embroidery:
 		else:
 			dbg.write("error loading file: unknown input file extension: %s\n" % (filename))
 			
+
+	############################################
+	#### PFAFF / KSM
+	############################################
+
+	def save_as_ksm(self, filename):
+		"""save design as  KSM/Pfaff format formated file
+
+		Args:
+			filename
+		"""			
+		f = open(filename, "wb")
+		f.write(self.export_ksm())		
+		f.close()
+		dbg.write("saved to file: %s\n" % (filename))
+
+
+	def export_ksm(self):
+		"""converts design to KSM/Pfaff format -  CURRENTLY UNTESTED
+		
+		Returns:
+			string (KSM/Pfaff)
+		"""			
+		
+		self.string = ""
+		self.mode_byte = 0x80
+		
+		def move(x,y):
+			self.string+=chr(abs(y))
+			self.string+=chr(abs(x))
+			if (y<0):
+				self.mode_byte |= 0x20
+			if (x<0):
+				self.mode_byte |= 0x40
+			self.string+=chr(self.mode_byte)
+								
+		
+		self.pos = Point(0,0)
+		lastColor = None
+		for stitch in self.coords:
+			if (lastColor!=None and stitch.color!=lastColor):
+				self.mode_byte = 0x99
+				#dbg.write("Color change!\n")
+			else:
+				self.mode_byte = 0x80
+				#dbg.write("color still %s\n" % stitch.color)
+			lastColor = stitch.color
+			new_int = stitch.as_int()
+			old_int = self.pos.as_int()
+			delta = new_int - old_int
+			
+			sum_x = 0
+			sum_y = 0
+			dmax = max(abs(delta.x), abs(delta.y))
+			dsteps = abs(dmax / 127) + 1
+			if dsteps == 1:
+				move(delta.x, delta.y)
+			else:
+				for i in range(0,dsteps):
+					if i < dsteps -1:
+						move(delta.x/dsteps, delta.y/dsteps)
+						sum_x += delta.x/dsteps
+						sum_y += delta.y/dsteps
+					else:
+						move(delta.x - sum_x, delta.y - sum_y)			
+						
+
+			self.pos = stitch
+		return self.string
+
 						
 	############################################
 	#### MELCO / EXP
@@ -346,8 +420,8 @@ class Embroidery:
 		f = open(filename, "wb")
 		f.write(self.export_melco())		
 		f.close()
-		dbg.write("saved to file: %s\n" % (filename))
-		
+		dbg.write("saved to file: %s\n" % (filename))		
+				
 		
 	def export_melco(self):
 		"""converts design to EXP/Melco format
@@ -400,7 +474,295 @@ class Embroidery:
 			#dbg.write("sum: %d, %d\n" % (sum_x,sum_y))
 			
 		return self.string
+	
+			
+	def import_melco(self, filename):
+		"""read an EXP/Melco file
+
+		Args:
+			filename
+		"""				
+		# read in an EXP/Melco file
+		(lastx, lasty) = (0, 0)
+		(self.maxx, self.maxy) = (0, 0)
+		(self.minx, self.miny) = (0, 0)
 		
+		# add Stitch at origin or not?
+		self.addStitch(Point(lastx, lasty, False))
+		
+		jump = False
+		f = open(filename, "rb")
+		byte = " "
+		while byte:			
+			byte = f.read(1)
+			if byte != "" and len(byte) > 0:
+				if byte == chr(0x80):
+					byte = f.read(1)
+					if byte == chr(0x04) or byte == chr(0x02)  or byte == chr(0x00):					
+						jump = True
+					elif byte == chr(0x01) or byte == chr(0x02):
+						dbg.write("reading EXP: ignore color change")
+					byte = f.read(1)
+				dx = ord(byte)
+				if dx > 127:
+					dx = dx - 256
+				byte = f.read(1)
+				if byte != "":
+					dy = ord(byte)					
+					if dy > 127:
+						dy = dy - 256
+					lastx = lastx + dx
+					lasty = lasty + dy	
+					if dx != 0 or dy != 0:
+						self.addStitch(Point(lastx, lasty, jump))
+					jump = False				
+		f.close()
+		dbg.write("reading EXP: loaded from file: %s\n" % (filename))
+		dbg.write("reading EXP: number of stitches: %d\n" % len(self.coords))
+		vself.translate_to_origin()
+
+
+
+						
+	############################################
+	#### TAJIMA / DST
+	############################################
+	
+
+	def save_as_dst(self, filename):
+		"""save design as DST/Tajima formated file
+
+		Args:
+			filename
+		"""			
+		f = open(filename, "wb")
+		f.write(self.export_tajima())		
+		f.close()
+		dbg.write("saved to file: %s\n" % (filename))		
+
+	def DecodeTajimaStitch(self, b1, b2, b3):               
+		x = self.LastX
+		y = self.LastY
+
+		if b1 & 0x01:
+				x += 1
+				
+		if b1 & 0x02:
+				x -= 1
+				
+		if b1 & 0x04:
+				x += 9
+				
+		if b1 & 0x08:
+				x -= 9
+				
+		if b1 & 0x80:
+				y += 1
+				
+		if b1 & 0x40:
+				y -= 1
+				
+		if b1 & 0x20:
+				y += 9
+				
+		if b1 & 0x10:
+				y -= 9
+				
+		if b2 & 0x01:
+				x += 3
+				
+		if b2 & 0x02:
+				x -= 3
+				
+		if b2 & 0x04:
+				x += 27
+				
+		if b2 & 0x08:
+				x -= 27
+				
+		if b2 & 0x80:
+				y += 3
+
+		if b2 & 0x40:
+				y -= 3
+				
+		if b2 & 0x20:
+				y += 27
+				
+		if b2 & 0x10:
+				y -= 27
+				
+		if b3 & 0x04:
+				x += 81
+				
+		if b3 & 0x08:
+				x -= 81
+				
+		if b3 & 0x20:
+				y += 81
+				
+		if b3 & 0x10:
+				y -= 81
+
+		# Color change
+		if b3 & 0x80 and b3 & 0x40:
+				self.ColorsRead += 1
+				if self.ColorsRead > len(self.Colors):
+						self.Colors.append( self.RandomColor() )
+				
+				self.ColorChanges.append( self.CurrentStitch ) 
+				return [self.ColorsRead - 1, 0, self.COLOR]
+
+		self.LastX = x
+		self.LastY = y
+
+		# Jump stitch
+		if b3 & 0x80:
+				self.JumpStitchCount += 1
+				self.JumpStitches.append( self.CurrentStitch ) 
+				return [x, y, self.JUMP]
+				
+		self.StitchCount += 1
+		return [x, y]
+
+				
+	def EncodeTajimaStitch(self, dx, dy, jump=False):
+		b1 = 0
+		b2 = 0
+		b3 = 0
+
+		if dx > 40:
+				b3 |= 0x04
+				dx -= 81
+
+		if dx < -40:
+				b3 |= 0x08
+				dx += 81
+				
+		if dy > 40:
+				b3 |= 0x20
+				dy -= 81
+
+		if dy < -40:
+				b3 |= 0x10
+				dy += 81
+
+		if dx > 13:
+				b2 |= 0x04
+				dx -= 27
+
+		if dx < -13:
+				b2 |= 0x08
+				dx += 27
+				
+		if dy > 13:
+				b2 |= 0x20
+				dy -= 27
+
+		if dy < -13:
+				b2 |= 0x10
+				dy += 27
+
+		if dx > 4:
+				b1 |= 0x04
+				dx -= 9
+
+		if dx < -4:
+				b1 |= 0x08
+				dx += 9
+				
+		if dy > 4:
+				b1 |= 0x20
+				dy -= 9
+
+		if dy < -4:
+				b1 |= 0x10
+				dy += 9
+				
+		if dx > 1:
+				b2 |= 0x01
+				dx -= 3
+
+		if dx < -1:
+				b2 |= 0x02
+				dx += 3
+				
+		if dy > 1:
+				b2 |= 0x80
+				dy -= 3
+
+		if dy < -1:
+				b2 |= 0x40
+				dy += 3
+
+		if dx > 0:
+				b1 |= 0x01
+				dx -= 1
+
+		if dx < 0:
+				b1 |= 0x02
+				dx += 1
+				
+		if dy > 0:
+				b1 |= 0x80 
+				dy -= 1
+
+		if dy < 0:
+				b1 |= 0x40
+				dy += 1
+
+		s = chr(b1)
+		s += chr(b2)
+		if jump:
+			s += chr(b3 | 0x83)
+		else:
+			s += chr(b3 | 0x03)
+		
+		return s
+
+		
+	def export_tajima(self):
+		"""converts design to DST/Tajima  format
+
+		Returns:
+			string (DST/Tajima )
+		"""				
+		self.string = ""
+		self.pos = self.coords[0]
+		dbg.write("export - stitch count: %d\n" % len(self.coords))
+		
+		for i in range(0, 512):
+			self.string += " "
+		
+		for stitch in self.coords[0:]:		
+			new_int = stitch.as_int()
+			old_int = self.pos.as_int()
+			delta = new_int - old_int	
+							
+			#do several interpolated steps if too long	
+			sum_x = 0
+			sum_y = 0
+			dmax = max(abs(delta.x), abs(delta.y))
+			dsteps = abs(dmax / 127) + 1
+			if dsteps == 1:
+				self.string += self.EncodeTajimaStitch(delta.x, delta.y, stitch.jump)				
+			else:
+				for i in range(0,dsteps):
+					if i < dsteps -1:
+						self.string += self.EncodeTajimaStitch(delta.x/dsteps, delta.y/dsteps, stitch.jump, )
+						sum_x += delta.x/dsteps
+						sum_y += delta.y/dsteps
+					else:
+						self.string += self.EncodeTajimaStitch(delta.x - sum_x, delta.y - sum_y, stitch.jump)					
+			self.pos = stitch		
+
+		self.string += chr(0x00)
+		self.string += chr(0x00)
+		self.string += chr(0xF3)
+			
+		return self.string
+	
+			
 	def import_melco(self, filename):
 		"""read an EXP/Melco file
 
@@ -445,6 +807,7 @@ class Embroidery:
 		dbg.write("reading EXP: loaded from file: %s\n" % (filename))
 		dbg.write("reading EXP: number of stitches: %d\n" % len(self.coords))
 		self.translate_to_origin()
+
 
 
 	############################################
