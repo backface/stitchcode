@@ -364,6 +364,10 @@ class Embroidery:
 		self.string = ""
 		self.mode_byte = 0x80
 		
+		#write empty header
+		for i in range(0, 512):
+			self.string += chr(0x00)		
+		
 		def move(x,y):
 			self.string+=chr(abs(y))
 			self.string+=chr(abs(x))
@@ -372,6 +376,7 @@ class Embroidery:
 			if (x<0):
 				self.mode_byte |= 0x40
 			self.string+=chr(self.mode_byte)
+	
 								
 		
 		self.pos = Point(0,0)
@@ -729,8 +734,9 @@ class Embroidery:
 		self.pos = self.coords[0]
 		dbg.write("export - stitch count: %d\n" % len(self.coords))
 		
+		#write empty header
 		for i in range(0, 512):
-			self.string += " "
+			self.string += chr(0x00)
 		
 		for stitch in self.coords[0:]:		
 			new_int = stitch.as_int()
