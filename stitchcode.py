@@ -328,6 +328,8 @@ class Embroidery:
 		ext = (filename[-3:]).lower()
 		if ext == "exp":
 			self.import_melco(filename)
+		if ext == "dst":
+			self.import_tajima(filename)
 		elif ext == "pes":
 			self.import_pes(filename)
 		elif ext == "svg":
@@ -519,7 +521,7 @@ class Embroidery:
 		f.close()
 		dbg.write("reading EXP: loaded from file: %s\n" % (filename))
 		dbg.write("reading EXP: number of stitches: %d\n" % len(self.coords))
-		vself.translate_to_origin()
+		self.translate_to_origin()
 
 
 
@@ -540,10 +542,11 @@ class Embroidery:
 		f.close()
 		dbg.write("saved to file: %s\n" % (filename))		
 
-	def DecodeTajimaStitch(self, b1, b2, b3):               
-		x = self.LastX
-		y = self.LastY
-
+	def DecodeTajimaStitch(self, b1, b2, b3):       
+		
+		x = 0
+		y = 0
+		        
 		if b1 & 0x01:
 				x += 1
 				
@@ -605,25 +608,20 @@ class Embroidery:
 				y -= 81
 
 		# Color change
-		if b3 & 0x80 and b3 & 0x40:
-				self.ColorsRead += 1
-				if self.ColorsRead > len(self.Colors):
-						self.Colors.append( self.RandomColor() )
-				
-				self.ColorChanges.append( self.CurrentStitch ) 
-				return [self.ColorsRead - 1, 0, self.COLOR]
+		#if b3 & 0x80 and b3 & 0x40:
+		#		self.ColorsRead += 1
+		#		if self.ColorsRead > len(self.Colors):
+		#				self.Colors.append( self.RandomColor() )
+		#		
+		#		self.ColorChanges.append( self.CurrentStitch ) 
+		#		return [self.ColorsRead - 1, 0, self.COLOR]
 
-		self.LastX = x
-		self.LastY = y
 
 		# Jump stitch
 		if b3 & 0x80:
-				self.JumpStitchCount += 1
-				self.JumpStitches.append( self.CurrentStitch ) 
-				return [x, y, self.JUMP]
-				
-		self.StitchCount += 1
-		return [x, y]
+			return (x, y, True)
+		else:
+			return (x, y, False)
 
 				
 	def EncodeTajimaStitch(self, dx, dy, jump=False):
@@ -763,12 +761,15 @@ class Embroidery:
 		return self.string
 	
 			
-	def import_melco(self, filename):
+	def import_tajima(self, filename):
 		"""read an EXP/Melco file
 
 		Args:
 			filename
-		"""				
+		"""			
+		
+		# TODO!!!
+		
 		# read in an EXP/Melco file
 		(lastx, lasty) = (0, 0)
 		(self.maxx, self.maxy) = (0, 0)
@@ -779,30 +780,28 @@ class Embroidery:
 		
 		jump = False
 		f = open(filename, "rb")
-		byte = " "
-		while byte:			
-			byte = f.read(1)
-			if byte != "" and len(byte) > 0:
-				if byte == chr(0x80):
-					byte = f.read(1)
-					if byte == chr(0x04) or byte == chr(0x02)  or byte == chr(0x00):					
-						jump = True
-					elif byte == chr(0x01) or byte == chr(0x02):
-						dbg.write("reading EXP: ignore color change")
-					byte = f.read(1)
-				dx = ord(byte)
-				if dx > 127:
-					dx = dx - 256
-				byte = f.read(1)
-				if byte != "":
-					dy = ord(byte)					
-					if dy > 127:
-						dy = dy - 256
-					lastx = lastx + dx
-					lasty = lasty + dy	
-					if dx != 0 or dy != 0:
-						self.addStitch(Point(lastx, lasty, jump))
-					jump = False				
+		header = f.read(512)
+
+		while True:
+			rec = f.read(3)
+
+			# Bad record or end of file
+			if len(rec) < 3:
+					break
+
+			b1 = ord(rec[0])
+			b2 = ord(rec[1])
+			b3 = ord(rec[2])
+
+			# End of file
+			if b3 == 0xF3:
+					break
+
+			(dx, dy, jump) = self.DecodeTajimaStitch(b1, b2, b3)
+			lastx = lastx + dx
+			lasty = lasty + dy			
+			self.addStitch(Point(lastx, lasty, jump))
+			
 		f.close()
 		dbg.write("reading EXP: loaded from file: %s\n" % (filename))
 		dbg.write("reading EXP: number of stitches: %d\n" % len(self.coords))
