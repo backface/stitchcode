@@ -1192,7 +1192,7 @@ class Embroidery:
 		return self.str		
 		
 	def save_as_svg(self, filename):
-		"""save design as AVG vector image
+		"""save design as SVG vector image
 		
 		Args:
 			filename
