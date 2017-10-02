@@ -30,6 +30,7 @@ from struct import unpack,pack
 from PIL import Image, ImageDraw
 dbg = sys.stderr
 
+pixels_per_millimeter = 5
 
 def abs(x):	
 	if (x<0): return -x
@@ -103,7 +104,15 @@ class Embroidery:
 		sx = int( self.maxx - self.minx )
 		sy = int( self.maxy - self.miny )
 		return (sx,sy)
-
+		
+	def getMetricWidth(self):
+		sx,sy = self.getSize()
+		return sx / 10.0
+		
+	def getMetricHeight(self):
+		sx,sy = self.getSize()
+		return sy / 10.0
+		
 	def translate_to_origin(self):
 		"""translates embroidery to origin
 
@@ -733,9 +742,40 @@ class Embroidery:
 		self.string = ""
 		self.pos = self.coords[0]
 		dbg.write("export - stitch count: %d\n" % len(self.coords))
-		
+
+
+		def writeHeader(str, length, padWithSpace=False):
+			for i in range (0,length-2):
+				if i < len(str):
+					self.string += str[i];
+				else:
+					if padWithSpace:
+						self.string += chr(0x20)
+					else:
+						self.string += chr(0x00);				
+			self.string += chr(0x0A);
+			self.string += chr(0x1A);		
+
+		writeHeader("LA:turtlestitch", 20, True)
+		writeHeader("ST:%s" % (len(self.coords)), 11)
+		writeHeader("CO:1", 7)
+		writeHeader("+X:%s" % (self.getMetricWidth()), 9)
+		writeHeader("-X:0", 9)
+		writeHeader("+Y:%s" % (self.getMetricHeight()), 9)
+		writeHeader("-Y:0", 9)
+		writeHeader("AX:0", 10)
+		writeHeader("AY:0", 10)
+		writeHeader("MX:0", 10)
+		writeHeader("MY:0", 10)
+		writeHeader("PD:0", 10)
+
+		self.string += chr(0x1a);
+		self.string += chr(0x00);
+		self.string += chr(0x00);
+		self.string += chr(0x00);
+			
 		#write empty header
-		for i in range(0, 512):
+		for i in range(0, 384):
 			self.string += chr(0x00)
 		
 		for stitch in self.coords[0:]:		
@@ -747,7 +787,7 @@ class Embroidery:
 			sum_x = 0
 			sum_y = 0
 			dmax = max(abs(delta.x), abs(delta.y))
-			dsteps = abs(dmax / 127) + 1
+			dsteps = abs(dmax / 121) + 1
 			if dsteps == 1:
 				self.string += self.EncodeTajimaStitch(delta.x, delta.y, stitch.jump)				
 			else:
@@ -1085,6 +1125,8 @@ class Embroidery:
 		stc = 2
 		stitch_color = (0, 0, 255, 0)
 		line_color = (0, 0, 0, 0)
+		
+		self.scale(pixels_per_millimeter/10.0)
 
 		(self.maxx, self.maxy) = (self.coords[0].x, self.coords[0].y)
 		(self.minx, self.miny) = (self.coords[0].x, self.coords[0].y)
