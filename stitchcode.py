@@ -272,11 +272,11 @@ class Embroidery:
 		self.coords = new_coords
 		dbg.write("to_triple_stitches END - stitch count: %d\n" % len(self.coords))
 		
-	def flatten(self, max_length=127):
+	def flatten(self, max_length=121):
 		"""flatten file - interpolate stitches that are too long
 
 		Args:
-			max_length: maximum stitch length (default = 127)
+			max_length: maximum stitch length (default = 121 for dst, exp could do 127)
 		"""					
 		dbg.write("flatten BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
@@ -759,15 +759,15 @@ class Embroidery:
 		writeHeader("LA:turtlestitch", 20, True)
 		writeHeader("ST:%s" % (len(self.coords)), 11)
 		writeHeader("CO:1", 7)
-		writeHeader("+X:%s" % (self.getMetricWidth()), 9)
-		writeHeader("-X:0", 9)
-		writeHeader("+Y:%s" % (self.getMetricHeight()), 9)
-		writeHeader("-Y:0", 9)
-		writeHeader("AX:0", 10)
-		writeHeader("AY:0", 10)
+		writeHeader("+X:%s" % (self.maxx), 9)
+		writeHeader("-X:%s" % (self.minx), 9)
+		writeHeader("+Y:%s" % (self.maxy), 9)
+		writeHeader("-Y:%s" % (self.miny), 9)
+		writeHeader("AX:%s" % self.coords[len(self.coords)-1].as_int().x, 10)
+		writeHeader("AY:%s" % self.coords[len(self.coords)-1].as_int().x, 10)
 		writeHeader("MX:0", 10)
 		writeHeader("MY:0", 10)
-		writeHeader("PD:0", 10)
+		writeHeader("PD:******", 10)
 
 		self.string += chr(0x1a);
 		self.string += chr(0x00);

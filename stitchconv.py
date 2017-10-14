@@ -40,6 +40,7 @@ distance = 0.3
 to_triple_stitches = False
 to_red_work = False
 show_stitches = False
+flatten = False
 
 def process_args():
 	global infile, outfile, zoom
@@ -48,9 +49,9 @@ def process_args():
 	global distance, show_stitches
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:trd:s",
+		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:trd:sf",
 			["help", "input=","output=","zoom=","to-triples","to-red-work","show-stitches",
-			"distance"])
+			"distance","flatten"])
 	except getopt.GetoptError, err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -75,6 +76,8 @@ def process_args():
 			distance = float(a)	
 		elif o in ("-s", "--show-stitch"):
 			show_stitches = True						
+		elif o in ("-f", "--flatten"):
+			flatten = True		
 		else:
 			usage();
 			sys.exit()
@@ -101,6 +104,9 @@ if __name__ == '__main__':
 	if to_red_work:
 		print "convert to red work stitches"
 		emb.to_red_work(distance*10)
+	
+	if flatten:
+		emb.flatten()
 		
 	if show_stitches and (outfile[-3:]).lower() == "png":
 		emb.save_as_png(outfile, show_stitches)
