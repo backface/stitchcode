@@ -113,6 +113,12 @@ class Embroidery:
 		sx,sy = self.getSize()
 		return sy / 10.0
 		
+	def info(self):
+		info_str = "";
+		info_str = "stitchcount: %d\n" % (len(self.coords))
+		info_str = info_str + "size: %0.2f x %0.2f mm\n" % (self.getMetricWidth(), self.getMetricHeight())
+		return info_str
+		
 	def translate_to_origin(self):
 		"""translates embroidery to origin
 
@@ -849,8 +855,8 @@ class Embroidery:
 			self.addStitch(Point(lastx, lasty, jump))
 			
 		f.close()
-		dbg.write("reading EXP: loaded from file: %s\n" % (filename))
-		dbg.write("reading EXP: number of stitches: %d\n" % len(self.coords))
+		dbg.write("reading DST: loaded from file: %s\n" % (filename))
+		dbg.write("reading DST: number of stitches: %d\n" % len(self.coords))
 		self.translate_to_origin()
 
 
