@@ -28,9 +28,12 @@ options:
     -o, --output=FILE       output file
     -z, --zoom=FACTOR       zoom in/out
     -t, --to-triples        convert to triple stitches
-    -r, --to-red-work       convert to red work stitches 
-    -s, --show-stitches     show stitches (PNG only)      
+    -r, --to-red-work       convert to red work stitches
+    -s, --show-stitches     show stitches (PNG only)
+    -j, --show-jumps        show jump stitches (PNG only)
+    -x, --show-info         show image info on commandline (size, etc..)
     -d, --distance=VALUES   distance of triple/redwork stitches in mm
+    -f, --flatten           flatten embroidery (clamp too long stitches)
 """
 
 infile = "";
@@ -42,18 +45,19 @@ to_red_work = False
 show_stitches = False
 flatten = False
 show_info = False
+show_jumps = False
 
 def process_args():
 	global infile, outfile, zoom
 	global to_triple_stitches
 	global to_red_work
-	global distance, show_stitches
+	global distance, show_stitches, show_jumps
 	global flatten, show_info
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:trd:sfx",
+		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:trd:sfxj",
 			["help", "input=","output=","zoom=","to-triples","to-red-work","show-stitches",
-			"distance", "flatten", "show-info", ])
+			"distance", "flatten", "show-info", "show-jumps"])
 	except getopt.GetoptError, err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -82,6 +86,8 @@ def process_args():
 			flatten = True		
 		elif o in ("-x", "--show-info"):
 			show_info = True	
+		elif o in ("-j", "--show-jumps"):
+			show_jumps = True	
 		else:
 			usage();
 			sys.exit()
@@ -101,9 +107,6 @@ if __name__ == '__main__':
 	emb.scale(zoom)
 	emb.translate_to_origin()
 	
-	if show_info:
-		print emb.info()
-		exit()
 
 	if to_triple_stitches:
 		print "convert to triple stitches"
@@ -121,4 +124,12 @@ if __name__ == '__main__':
 	else:
 		emb.save(outfile)
 
-		
+	if show_info:
+		print emb.info()
+	else:
+		if show_stitches and (outfile[-3:]).lower() == "png":
+			emb.save_as_png(outfile, show_stitches)
+		else:
+			emb.save(outfile)
+
+	

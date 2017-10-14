@@ -1120,7 +1120,7 @@ class Embroidery:
 	############################################
 	
 	
-	def save_as_png(self, filename, mark_stitch=False):	
+	def save_as_png(self, filename, mark_stitch=False, mark_jump=False):	
 		"""save design as PNG image
 		
 		Args:
@@ -1173,10 +1173,12 @@ class Embroidery:
 				stitch_color = (0,0,255,0)
 				
 			p = stitch.as_int()
-			draw.line(
-				(last.x + border, self.maxy - last.y + border, 
-				 p.x + border , self.maxy - p.y + border), 
-				fill=line_color)
+			
+			if not stitch.jump or (stitch.jump and mark_jump):
+				draw.line(
+					(last.x + border, self.maxy - last.y + border, 
+					 p.x + border , self.maxy - p.y + border), 
+					fill=line_color)
 			
 			if(mark_stitch and not stitch.jump):
 				mark_point(p)
