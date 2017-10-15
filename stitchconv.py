@@ -104,8 +104,6 @@ def process_args():
 
 if __name__ == '__main__':
 	process_args()
-	if not outfile:
-		outfile = infile
 
 	emb = stitchcode.Embroidery()
 	emb.load(infile)
@@ -125,13 +123,13 @@ if __name__ == '__main__':
 	
 	if flatten:
 		emb.flatten()
-		
-	if show_info:
-		print emb.info()
-	else:
+	
+	if outfile:
 		if show_stitches and (outfile[-3:]).lower() == "png":
 			emb.save_as_png(outfile, show_stitches)
 		else:
 			emb.save(outfile)
 
+	if show_info:
+		print emb.info()
 	

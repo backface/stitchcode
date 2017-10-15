@@ -141,7 +141,7 @@ class Embroidery:
 		info_str = "stitchcount: %d\n" % (len(self.coords))
 		info_str = info_str + "size: %0.2f x %0.2f mm\n" % (self.getMetricWidth(), self.getMetricHeight())
 		if self.densityWarning:
-			info_str = "DENSITY WARNING!\n"
+			info_str += "DENSITY WARNING!\n"
 		return info_str
 		
 	def translate_to_origin(self):
