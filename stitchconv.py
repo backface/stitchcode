@@ -34,6 +34,7 @@ options:
     -x, --show-info         show image info on commandline (size, etc..)
     -d, --distance=VALUES   distance of triple/redwork stitches in mm
     -f, --flatten           flatten embroidery (clamp too long stitches)
+    -v, --verbose           be verbose
 """
 
 infile = "";
@@ -46,6 +47,7 @@ show_stitches = False
 flatten = False
 show_info = False
 show_jumps = False
+verbost  = False
 
 def process_args():
 	global infile, outfile, zoom
@@ -53,11 +55,12 @@ def process_args():
 	global to_red_work
 	global distance, show_stitches, show_jumps
 	global flatten, show_info
+	global verbose
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:trd:sfxj",
+		opts, args = getopt.getopt(sys.argv[1:], "hi:o:z:trd:sfxjv",
 			["help", "input=","output=","zoom=","to-triples","to-red-work","show-stitches",
-			"distance", "flatten", "show-info", "show-jumps"])
+			"distance", "flatten", "show-info", "show-jumps","verbose"])
 	except getopt.GetoptError, err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -88,6 +91,8 @@ def process_args():
 			show_info = True	
 		elif o in ("-j", "--show-jumps"):
 			show_jumps = True	
+		elif o in ("-v", "--verbose"):
+			verbose = True	
 		else:
 			usage();
 			sys.exit()
@@ -109,21 +114,18 @@ if __name__ == '__main__':
 	
 
 	if to_triple_stitches:
-		print "convert to triple stitches"
+		if (verbose): 
+			print "convert to triple stitches"
 		emb.to_triple_stitches(distance*10)	
 		
 	if to_red_work:
-		print "convert to red work stitches"
+		if (verbose): 
+			print "convert to red work stitches"
 		emb.to_red_work(distance*10)
 	
 	if flatten:
 		emb.flatten()
 		
-	if show_stitches and (outfile[-3:]).lower() == "png":
-		emb.save_as_png(outfile, show_stitches)
-	else:
-		emb.save(outfile)
-
 	if show_info:
 		print emb.info()
 	else:

@@ -31,7 +31,8 @@ from PIL import Image, ImageDraw
 dbg = sys.stderr
 
 pixels_per_millimeter = 5
-max_stitch_len = 121 # at least for DST files, EXP allows 127
+max_stitch_len = 121 		# at least for DST files, EXP allows 127
+density_max = 15
 
 def abs(x):	
 	if (x<0): return -x
@@ -73,6 +74,8 @@ class Point:
 	def __cmp__(self, other):
 		return cmp(self.as_tuple(), other.as_tuple())
 
+	def toString(self):
+		return "%dx%d" % (self.x, self.y)
 
 ############################################
 #### MAIN EMBROIDERY CLASS
@@ -86,12 +89,31 @@ class Embroidery:
 		self.maxx = 0
 		self.miny = 0
 		self.maxy = 0
+		self.tooLong = 0
+		self.densityWarning = False
+		self.density = dict()
 		
 	def setMaxStitchLength(self, clamp=max_stitch_len):
 		self.clamp = clamp
 
 	def addStitch(self, coord):
 		self.coords.append(coord)
+		
+		# calculate density on given points
+		if self.density.has_key(coord.toString()):
+			self.density[coord.toString()] += 1
+			if self.density[coord.toString()] > density_max:
+				self.densityWarning = True
+		else:
+			self.density[coord.toString()] = 1
+			
+		# calculate length warnings:
+		if len(self.coords) > 1:
+			delta = coord - self.coords[-2]		
+			dmax = max(abs(delta.x), abs(delta.y))
+			if dmax > max_stitch_len:
+				self.tooLong += 1
+
 		
 	def getSize(self):
 		(self.maxx, self.maxy) = (self.coords[0].x, self.coords[0].y)
@@ -118,6 +140,8 @@ class Embroidery:
 		info_str = "";
 		info_str = "stitchcount: %d\n" % (len(self.coords))
 		info_str = info_str + "size: %0.2f x %0.2f mm\n" % (self.getMetricWidth(), self.getMetricHeight())
+		if self.densityWarning:
+			info_str = "DENSITY WARNING!\n"
 		return info_str
 		
 	def translate_to_origin(self):
