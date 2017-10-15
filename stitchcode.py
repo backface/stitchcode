@@ -31,6 +31,7 @@ from PIL import Image, ImageDraw
 dbg = sys.stderr
 
 pixels_per_millimeter = 5
+max_stitch_len = 121 # at least for DST files, EXP allows 127
 
 def abs(x):	
 	if (x<0): return -x
@@ -80,13 +81,13 @@ class Point:
 class Embroidery:
 	def __init__(self):
 		self.coords = []
-		self.clamp = 127
+		self.clamp = max_stitch_len
 		self.minx = 0
 		self.maxx = 0
 		self.miny = 0
 		self.maxy = 0
 		
-	def setMaxStitchLength(self, clamp=127):
+	def setMaxStitchLength(self, clamp=max_stitch_len):
 		self.clamp = clamp
 
 	def addStitch(self, coord):
@@ -151,12 +152,12 @@ class Embroidery:
 			p.x *= factor
 			p.y *= factor
 
-	def add_endstitches(self, length=10, max_stitch_length=127):
+	def add_endstitches(self, length=10, max_stitch_length=max_stitch_len):
 		"""adds endstitches before and after stitches that are too long
 
 		Args:
 			length: length of end stitches (default = 10)
-			max_stitch_length: max. length for stitches (default = 127)
+			max_stitch_length: max. length for stitches (default = max_stitch_len = 121)
 		"""				
 		dbg.write("add endstitches BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
@@ -278,7 +279,7 @@ class Embroidery:
 		self.coords = new_coords
 		dbg.write("to_triple_stitches END - stitch count: %d\n" % len(self.coords))
 		
-	def flatten(self, max_length=121):
+	def flatten(self, max_length=max_stitch_len):
 		"""flatten file - interpolate stitches that are too long
 
 		Args:
