@@ -160,6 +160,7 @@ class Embroidery:
 			self.maxy = max(self.maxy, p.y)
 		sx = self.maxx - self.minx
 		sy = self.maxy - self.miny
+	
 		for p in self.coords:
 			p.x -= self.minx
 			p.y -= self.miny
@@ -312,7 +313,9 @@ class Embroidery:
 		dbg.write("flatten BEGIN - stitch count: %d\n" % len(self.coords))
 		self.pos = self.coords[0]
 		new_coords = []
-		new_coords.append(self.coords[0])
+		## ignore first if its a jump
+		if not self.coords[0].jump:
+			new_coords.append(self.coords[0])
 		for stitch in self.coords[1:]:		
 			new_stitch = stitch.as_int()
 			last_stitch = self.pos.as_int()
@@ -853,7 +856,7 @@ class Embroidery:
 		(self.minx, self.miny) = (0, 0)
 		
 		# add Stitch at origin or not?
-		self.addStitch(Point(lastx, lasty, False))
+		#self.addStitch(Point(lastx, lasty, False))
 		
 		jump = False
 		f = open(filename, "rb")
