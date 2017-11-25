@@ -265,12 +265,11 @@ class Embroidery:
 				new_stitch = stitch.as_int()
 				last_stitch = self.pos.as_int()
 				delta = new_stitch - last_stitch	
-				if delta.length != 0:						
+				if delta.length() != 0:
 					nx = length * -delta.y / delta.length()
 					ny = length * delta.x / delta.length()			
 					new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
 					new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
-					new_coords.append(stitch)
 			new_coords.append(stitch)				
 			self.pos = stitch
 		self.coords = new_coords
@@ -291,14 +290,13 @@ class Embroidery:
 				new_stitch = stitch.as_int()
 				last_stitch = self.pos.as_int()
 				delta = new_stitch - last_stitch
-				if delta.length != 0:				
+				if delta.length() != 0:				
 					nx = length * -delta.y / delta.length()
 					ny = length * delta.x / delta.length()			
 					new_coords.append(Point(new_stitch.x - nx, new_stitch.y - ny))
 					new_coords.append(Point(last_stitch.x - nx, last_stitch.y - ny))
 					new_coords.append(Point(new_stitch.x + nx, new_stitch.y + ny))
 					new_coords.append(Point(last_stitch.x + nx, last_stitch.y + ny))
-					new_coords.append(stitch)
 			new_coords.append(stitch)				
 			self.pos = stitch
 		self.coords = new_coords
