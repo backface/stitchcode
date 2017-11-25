@@ -47,7 +47,7 @@ show_stitches = False
 flatten = False
 show_info = False
 show_jumps = False
-verbost  = False
+verbose  = False
 
 def process_args():
 	global infile, outfile, zoom
